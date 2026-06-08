@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, Calendar, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function SchedulePanel() {
   const [relaxNewton, setRelaxNewton] = useState(false)
@@ -10,19 +11,11 @@ export default function SchedulePanel() {
   const handleSolve = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          relax_newton: relaxNewton,
-          relax_cohort: relaxCohort
-        })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runSchedule(relaxNewton, relaxCohort)
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to solve schedule CSP via Python solver.")
     }
     setLoading(false)
   }

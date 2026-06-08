@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MessageSquare, Send, CheckCircle2, AlertCircle } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function RouterPanel() {
   const [query, setQuery] = useState('')
@@ -10,16 +11,11 @@ export default function RouterPanel() {
     if (!query.trim()) return
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/router', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runRouter(query)
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to route query via Python router.")
     }
     setLoading(false)
   }

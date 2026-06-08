@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Play } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function SearchPanel() {
   const [peas, setPeas] = useState(null)
@@ -15,8 +16,7 @@ export default function SearchPanel() {
   ])
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/peas/Search')
-      .then(res => res.json())
+    pythonRunner.getPeas('Search')
       .then(data => setPeas(data))
       .catch(err => console.error(err))
   }, [])
@@ -24,16 +24,11 @@ export default function SearchPanel() {
   const handleSolve = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, grid })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runSearch(algorithm, grid)
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to solve maze via Python solver.")
     }
     setLoading(false)
   }

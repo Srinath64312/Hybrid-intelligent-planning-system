@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node copy-python.js && vite",
+    "build": "node copy-python.js && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

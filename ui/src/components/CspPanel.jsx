@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Play } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function CspPanel() {
   const [peas, setPeas] = useState(null)
@@ -8,8 +9,7 @@ export default function CspPanel() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/peas/CSP')
-      .then(res => res.json())
+    pythonRunner.getPeas('CSP')
       .then(data => setPeas(data))
       .catch(err => console.error(err))
   }, [])
@@ -17,16 +17,11 @@ export default function CspPanel() {
   const handleSolve = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/csp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ n: parseInt(n) })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runCsp(parseInt(n))
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to solve CSP via Python solver.")
     }
     setLoading(false)
   }

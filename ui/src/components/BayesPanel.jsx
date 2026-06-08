@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Play } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function BayesPanel() {
   const [peas, setPeas] = useState(null)
@@ -10,8 +11,7 @@ export default function BayesPanel() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/peas/Bayes')
-      .then(res => res.json())
+    pythonRunner.getPeas('Bayes')
       .then(data => setPeas(data))
       .catch(err => console.error(err))
   }, [])
@@ -19,19 +19,11 @@ export default function BayesPanel() {
   const handleSolve = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/bayes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          method,
-          evidence: { Cough: cough, SoreThroat: soreThroat }
-        })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runBayes(method, { Cough: cough, SoreThroat: soreThroat })
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to run Bayesian inference via Python solver.")
     }
     setLoading(false)
   }

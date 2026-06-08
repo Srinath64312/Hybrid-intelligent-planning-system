@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function AdvisorPanel() {
   const [size, setSize] = useState('Medium')
@@ -13,16 +14,11 @@ export default function AdvisorPanel() {
   const handleConsult = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/advisor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ size, costs, heuristic, memory_limited: memoryLimited })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runAdvisor({ size, costs, heuristic, memory_limited: memoryLimited })
       setResult(data)
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to analyze graph features via Python advisor.")
     }
     setLoading(false)
   }

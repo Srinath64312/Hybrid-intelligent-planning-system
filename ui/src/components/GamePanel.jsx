@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
+import { pythonRunner } from '../pythonRunner'
 
 export default function GamePanel() {
   const [peas, setPeas] = useState(null)
@@ -13,8 +14,7 @@ export default function GamePanel() {
   ])
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/peas/Game')
-      .then(res => res.json())
+    pythonRunner.getPeas('Game')
       .then(data => setPeas(data))
       .catch(err => console.error(err))
   }, [])
@@ -31,12 +31,7 @@ export default function GamePanel() {
   const makeAIMove = async (currentBoard) => {
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/game', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ algorithm, state: currentBoard })
-      })
-      const data = await res.json()
+      const data = await pythonRunner.runGame(algorithm, currentBoard)
       
       setResult(data)
       
@@ -52,7 +47,7 @@ export default function GamePanel() {
       }
     } catch (err) {
       console.error(err)
-      alert("Failed to connect to backend API.")
+      alert("Failed to compute AI move via Python solver.")
     }
     setLoading(false)
   }
