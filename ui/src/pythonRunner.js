@@ -2,7 +2,6 @@ const filesToLoad = [
   'core/problem.py',
   'core/peas.py',
   'core/advisor.py',
-  'core/router.py',
   'engines/search_engine.py',
   'engines/csp_engine.py',
   'engines/game_engine.py',
@@ -264,15 +263,7 @@ json.dumps(result)
     return runPythonCode(code, { graphData });
   },
   
-  async runRouter(query) {
-    const code = `
-from src.core.router import NLPQueryRouter
-router = NLPQueryRouter()
-result = router.route_query(query)
-json.dumps(result)
-`;
-    return runPythonCode(code, { query });
-  },
+
   
   async runSchedule(relax_newton, relax_cohort) {
     const code = `

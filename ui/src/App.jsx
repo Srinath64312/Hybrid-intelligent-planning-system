@@ -7,7 +7,6 @@ import GamePanel from './components/GamePanel'
 import BayesPanel from './components/BayesPanel'
 import AdvisorPanel from './components/AdvisorPanel'
 import HomePanel from './components/HomePanel'
-import RouterPanel from './components/RouterPanel'
 import SchedulePanel from './components/SchedulePanel'
 import './index.css'
 
@@ -37,7 +36,6 @@ function App() {
     { id: 'game', icon: Gamepad2, label: 'Game AI (Tic-Tac-Toe)' },
     { id: 'bayes', icon: Activity, label: 'Probabilistic (Diagnosis)' },
     { id: 'advisor', icon: Lightbulb, label: 'Advisor (Expert Systems)' },
-    { id: 'router', icon: MessageSquare, label: 'NLP Query Router' },
     { id: 'schedule', icon: CalendarDays, label: 'Scheduling CSP' }
   ]
 
@@ -166,7 +164,6 @@ function App() {
           {activeTab === 'game' && <GamePanel />}
           {activeTab === 'bayes' && <BayesPanel />}
           {activeTab === 'advisor' && <AdvisorPanel />}
-          {activeTab === 'router' && <RouterPanel />}
           {activeTab === 'schedule' && <SchedulePanel />}
         </div>
       </div>

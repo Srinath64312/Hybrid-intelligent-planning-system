@@ -1,4 +1,4 @@
-import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, ChevronRight, MessageSquare, Calendar } from 'lucide-react'
+import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, ChevronRight, Calendar } from 'lucide-react'
 
 export default function HomePanel({ setActiveTab }) {
   const modules = [
@@ -7,8 +7,7 @@ export default function HomePanel({ setActiveTab }) {
     { id: 'schedule', title: 'University Scheduling', icon: Calendar, color: '#8b5cf6', desc: 'Constraint Satisfaction Problem (CSP) solver for resolving class and room conflicts.' },
     { id: 'game', title: 'Adversarial Game AI', icon: Gamepad2, color: '#ef4444', desc: 'Tic-Tac-Toe agent with Minimax & Alpha-Beta Pruning.' },
     { id: 'bayes', title: 'Probabilistic Reasoning', icon: Activity, color: '#10b981', desc: 'Medical diagnosis using Bayesian Networks.' },
-    { id: 'advisor', title: 'Expert AI Advisor', icon: Lightbulb, color: '#ec4899', desc: 'Algorithmic recommendations based on graph traits.' },
-    { id: 'router', title: 'NLP Query Router', icon: MessageSquare, color: '#06b6d4', desc: 'NLP routing engine parsing natural language queries into structured payloads.' }
+    { id: 'advisor', title: 'Expert AI Advisor', icon: Lightbulb, color: '#ec4899', desc: 'Algorithmic recommendations based on graph traits.' }
   ]
 
   return (

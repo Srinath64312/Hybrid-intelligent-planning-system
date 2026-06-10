@@ -11,7 +11,6 @@ from src.engines.csp_engine import run_csp
 from src.engines.game_engine import run_minimax
 from src.engines.bayes_engine import run_exact_inference, run_rejection_sampling
 from src.core.advisor import generate_advisor_report, analyze_graph_features
-from src.core.router import NLPQueryRouter
 
 app = Flask(__name__)
 CORS(app)
@@ -159,15 +158,6 @@ def run_bayes_api():
 def run_advisor_api():
     data = request.json or {}
     result = analyze_graph_features(data)
-    return jsonify(result)
-
-router = NLPQueryRouter()
-
-@app.route("/api/router", methods=["POST"])
-def run_nlp_router():
-    data = request.json or {}
-    query = data.get("query", "")
-    result = router.route_query(query)
     return jsonify(result)
 
 @app.route("/api/schedule", methods=["POST"])
