@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Play } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Play, Pause, Square, FastForward, Settings2, Activity } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
 
 export default function SearchPanel() {
@@ -15,17 +16,39 @@ export default function SearchPanel() {
     [0, 0, 0, 0, 0]
   ])
 
+  // Playback state
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playbackIndex, setPlaybackIndex] = useState(0)
+  const [playbackSpeed, setPlaybackSpeed] = useState(200) // ms per step
+
   useEffect(() => {
     pythonRunner.getPeas('Search')
       .then(data => setPeas(data))
       .catch(err => console.error(err))
   }, [])
 
+  // Animation Loop
+  useEffect(() => {
+    let timer;
+    if (isPlaying && result && result.visited_sequence && playbackIndex < result.visited_sequence.length) {
+      timer = setTimeout(() => {
+        setPlaybackIndex(prev => prev + 1)
+      }, playbackSpeed);
+    } else if (isPlaying && result && playbackIndex >= result.visited_sequence.length) {
+      setIsPlaying(false)
+    }
+    return () => clearTimeout(timer)
+  }, [isPlaying, playbackIndex, result, playbackSpeed])
+
   const handleSolve = async () => {
     setLoading(true)
+    setIsPlaying(false)
+    setPlaybackIndex(0)
     try {
       const data = await pythonRunner.runSearch(algorithm, grid)
       setResult(data)
+      // Auto-play the tracer
+      setIsPlaying(true)
     } catch (err) {
       console.error(err)
       alert("Failed to solve maze via Python solver.")
@@ -34,39 +57,79 @@ export default function SearchPanel() {
   }
 
   const toggleCell = (r, c) => {
-    // Prevent toggling start and goal
     if ((r === 0 && c === 0) || (r === 4 && c === 4)) return
     const newGrid = [...grid]
     newGrid[r] = [...grid[r]]
     newGrid[r][c] = newGrid[r][c] === 0 ? 1 : 0
     setGrid(newGrid)
-    // Clear previous results when grid changes
     setResult(null)
+    setIsPlaying(false)
+    setPlaybackIndex(0)
   }
 
+  const resetTracer = () => {
+    setIsPlaying(false)
+    setPlaybackIndex(0)
+  }
+
+  const stepForward = () => {
+    setIsPlaying(false)
+    if (result && playbackIndex < result.visited_sequence.length) {
+      setPlaybackIndex(prev => prev + 1)
+    }
+  }
+
+  const isPlaybackComplete = result && playbackIndex >= result.visited_sequence.length;
+
   return (
-    <div>
-      <h1 style={{ marginTop: 0, color: '#e2e8f0' }}>Search Engine: Interactive Maze</h1>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="p-8 max-w-7xl mx-auto flex flex-col gap-8"
+    >
+      <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+        <div className="bg-blue-500/20 p-3 rounded-xl">
+          <Settings2 size={32} className="text-blue-500" />
+        </div>
+        <div>
+          <h1 className="m-0 text-3xl font-bold text-slate-200">Search Engine: Visual Tracer</h1>
+          <p className="m-0 text-slate-400 mt-1">Interactive Maze Pathfinding with Animated Playback</p>
+        </div>
+      </div>
       
       {peas && (
-        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#c084fc' }}>PEAS Analysis</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.9em', color: '#cbd5e1' }}>
-            <div><strong>Performance:</strong> {peas.performance}</div>
-            <div><strong>Environment:</strong> {peas.environment}</div>
-            <div><strong>Actuators:</strong> {peas.actuators}</div>
-            <div><strong>Sensors:</strong> {peas.sensors}</div>
-            <div style={{ gridColumn: '1 / -1' }}><strong>Type:</strong> {peas.env_type}</div>
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+          className="bg-slate-800/50 border border-white/5 p-6 rounded-2xl"
+        >
+          <h3 className="m-0 mb-4 text-blue-400 font-semibold flex items-center gap-2">PEAS Analysis</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-slate-300">
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5"><strong className="text-blue-300 block mb-1">Performance</strong> {peas.performance}</div>
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5"><strong className="text-blue-300 block mb-1">Environment</strong> {peas.environment}</div>
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5"><strong className="text-blue-300 block mb-1">Actuators</strong> {peas.actuators}</div>
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5"><strong className="text-blue-300 block mb-1">Sensors</strong> {peas.sensors}</div>
+            <div className="bg-black/20 p-3 rounded-lg border border-white/5 col-span-full md:col-span-2 lg:col-span-4 flex items-center gap-2">
+              <strong className="text-blue-300">Type:</strong> {peas.env_type}
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="grid-2">
-        <div>
-          <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '0.9em', color: '#94a3b8' }}>Algorithm Selection</label>
-              <select value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-6">
+          <div className="glass-panel p-6 flex flex-wrap gap-6 items-end border-blue-500/20">
+            <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+              <label className="text-sm font-medium text-slate-400">Algorithm Selection</label>
+              <select 
+                value={algorithm} 
+                onChange={e => {
+                  setAlgorithm(e.target.value)
+                  setResult(null)
+                  resetTracer()
+                }} 
+                className="bg-black/40 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              >
                 <option value="Auto-Select Best">Auto-Select Best Algorithm</option>
                 <option value="A*">A* Search</option>
                 <option value="UCS">Uniform Cost Search (Dijkstra)</option>
@@ -75,18 +138,76 @@ export default function SearchPanel() {
                 <option value="DFS">Depth First Search (DFS)</option>
               </select>
             </div>
-            <button className="btn" onClick={handleSolve} disabled={loading}>
-              <Play size={18} /> {loading ? 'Solving...' : 'Solve Maze'}
+            <button 
+              onClick={handleSolve} 
+              disabled={loading}
+              className={`flex-1 min-w-[200px] flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold transition-all shadow-lg
+                ${loading 
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-400 hover:to-indigo-500 hover:shadow-indigo-500/25 hover:-translate-y-0.5'
+                }`}
+            >
+              <Play size={20} className={loading ? 'animate-pulse' : ''} /> 
+              {loading ? 'Solving...' : 'Solve Maze'}
             </button>
           </div>
+
+          {/* Playback Controls */}
+          <AnimatePresence>
+            {result && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                className="glass-panel p-4 flex flex-col gap-4 border-indigo-500/30"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-indigo-300">
+                    Tracer Progress: {playbackIndex} / {result.visited_sequence.length} Nodes
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={resetTracer} className="p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors"><Square size={16} /></button>
+                    {isPlaying ? (
+                      <button onClick={() => setIsPlaying(false)} className="p-2 bg-amber-600 hover:bg-amber-500 rounded text-white transition-colors"><Pause size={16} /></button>
+                    ) : (
+                      <button onClick={() => setIsPlaying(true)} className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white transition-colors"><Play size={16} /></button>
+                    )}
+                    <button onClick={stepForward} className="p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors"><FastForward size={16} /></button>
+                  </div>
+                </div>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="bg-indigo-500 h-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(playbackIndex / result.visited_sequence.length) * 100}%` }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 40px)', gap: '4px' }}>
+          {/* Maze Grid */}
+          <div className="glass-panel flex-1 flex flex-col items-center justify-center bg-black/20 p-8">
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, minmax(3rem, 1fr))' }}>
               {grid.map((row, r) => row.map((cell, c) => {
                 const isStart = r === 0 && c === 0
                 const isGoal = r === 4 && c === 4
-                // Check if this cell is part of the solution path
-                const inPath = result && result.path && !isStart && !isGoal && (() => {
+                
+                // Determine Tracer State
+                let isVisited = false;
+                let isCurrentExpanding = false;
+                
+                if (result && result.visited_sequence) {
+                  const seq = result.visited_sequence.slice(0, playbackIndex)
+                  isVisited = seq.some(pt => pt[0] === r && pt[1] === c)
+                  
+                  if (playbackIndex > 0 && playbackIndex <= result.visited_sequence.length) {
+                    const currentPt = result.visited_sequence[playbackIndex - 1]
+                    isCurrentExpanding = currentPt[0] === r && currentPt[1] === c
+                  }
+                }
+
+                // Path construction
+                const inPath = isPlaybackComplete && result && result.path && !isStart && !isGoal && (() => {
                   let currR = 0, currC = 0
                   for (let move of result.path) {
                     if (move === 'UP') currR--
@@ -98,69 +219,112 @@ export default function SearchPanel() {
                   return false
                 })()
 
-                let bgColor = cell === 1 ? '#334155' : 'rgba(255,255,255,0.05)'
-                if (isStart) bgColor = '#4ade80' // Green
-                if (isGoal) bgColor = '#f87171'  // Red
-                if (inPath) bgColor = '#a855f7'  // Purple path
+                // Color assignments based on tracer state
+                let bgColor = 'bg-slate-800/60 border-slate-700' // Default unvisited
+                let textColor = 'text-transparent'
+                let shadow = ''
+                let zIndex = 1
+
+                if (cell === 1) {
+                  bgColor = 'bg-slate-950 border-slate-900' // Wall
+                } else if (isStart) {
+                  bgColor = 'bg-emerald-500 border-emerald-400'
+                  textColor = 'text-white'
+                } else if (isGoal) {
+                  bgColor = 'bg-rose-500 border-rose-400'
+                  textColor = 'text-white'
+                } else if (inPath) {
+                  bgColor = 'bg-amber-400 border-amber-300'
+                  shadow = 'shadow-[0_0_15px_rgba(251,191,36,0.6)]'
+                  zIndex = 10
+                } else if (isCurrentExpanding) {
+                  bgColor = 'bg-purple-500 border-purple-400'
+                  shadow = 'shadow-[0_0_20px_rgba(168,85,247,0.8)]'
+                  zIndex = 20
+                } else if (isVisited) {
+                  bgColor = 'bg-indigo-500/30 border-indigo-500/50'
+                }
 
                 return (
-                  <div 
+                  <motion.div 
                     key={`${r}-${c}`}
                     onClick={() => toggleCell(r, c)}
-                    style={{
-                      width: '40px', height: '40px', background: bgColor,
-                      borderRadius: '4px', cursor: (isStart || isGoal) ? 'not-allowed' : 'pointer',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 'bold', color: 'white'
-                    }}
+                    animate={{ backgroundColor: bgColor, boxShadow: shadow }}
+                    transition={{ duration: 0.3 }}
+                    className={`
+                      w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center font-bold text-lg border-2
+                      ${(isStart || isGoal) ? 'cursor-not-allowed' : 'cursor-pointer hover:border-slate-400'}
+                      ${bgColor} ${textColor}
+                    `}
+                    style={{ zIndex }}
                   >
                     {isStart ? 'S' : isGoal ? 'G' : ''}
-                  </div>
+                  </motion.div>
                 )
               }))}
             </div>
-            <p style={{ fontSize: '0.8em', color: '#94a3b8', marginTop: '15px', textAlign: 'center' }}>
-              Click cells to toggle walls (dark gray).<br/>S = Start | G = Goal
+            <p className="text-sm text-slate-500 mt-6 text-center">
+              Click cells to toggle walls.<br/>S = Start | G = Goal
             </p>
           </div>
         </div>
 
-        {result && (
-          <div>
-            <h3 style={{ margin: '0 0 15px 0', color: '#c084fc' }}>Execution Results</h3>
-            {result.auto_selected && (
-              <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-                <h3 style={{ margin: '0 0 15px 0', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ✨ Expert AI Advisor
-                </h3>
-                <div style={{ color: '#e2e8f0', marginBottom: '15px' }}>
-                  Optimal Algorithm Selected: <strong style={{ color: '#4ade80' }}>{result.auto_selected}</strong>
-                </div>
-                {result.advisor_report && result.advisor_report.map((item, idx) => (
-                  <div key={idx} style={{ marginBottom: '12px', fontSize: '0.95em', lineHeight: '1.5' }}>
-                    <strong style={{ color: '#cbd5e1' }}>{idx + 1}. {item.title}:</strong> <span style={{ color: '#94a3b8' }}>{item.text}</span>
+        <AnimatePresence>
+          {result && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col gap-6"
+            >
+              {result.auto_selected && (
+                <div className="glass-panel border-indigo-500/30 bg-indigo-500/10">
+                  <h3 className="m-0 mb-4 text-indigo-400 font-semibold flex items-center gap-2">
+                    ✨ Expert AI Advisor
+                  </h3>
+                  <div className="text-slate-200 mb-4">
+                    Optimal Algorithm Selected: <strong className="text-emerald-400">{result.auto_selected}</strong>
                   </div>
-                ))}
+                  {result.advisor_report && result.advisor_report.map((item, idx) => (
+                    <div key={idx} className="mb-3 text-sm leading-relaxed">
+                      <strong className="text-slate-300">{idx + 1}. {item.title}:</strong> <span className="text-slate-400">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="glass-panel border-blue-500/20">
+                <h3 className="m-0 mb-4 text-blue-400 font-semibold flex items-center gap-2">
+                  <Activity size={20} /> Execution Results
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <span className="text-slate-400 text-sm">Nodes Expanded</span>
+                    <strong className="block text-3xl text-blue-300 mt-1">{result.nodes_expanded}</strong>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <span className="text-slate-400 text-sm">Path Cost</span>
+                    <strong className="block text-3xl text-amber-300 mt-1">{result.cost}</strong>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5 col-span-2 flex items-center justify-between">
+                    <span className="text-slate-400 text-sm">Total Runtime</span>
+                    <strong className="text-xl text-emerald-300">{result.runtime.toFixed(4)}s</strong>
+                  </div>
+                </div>
               </div>
-            )}
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: 'rgba(99, 102, 241, 0.1)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-              <div><span style={{ color: '#94a3b8' }}>Nodes Expanded:</span> <br/><strong style={{ fontSize: '1.2em' }}>{result.nodes_expanded}</strong></div>
-              <div><span style={{ color: '#94a3b8' }}>Path Cost:</span> <br/><strong style={{ fontSize: '1.2em' }}>{result.cost}</strong></div>
-              <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#94a3b8' }}>Runtime:</span> <br/><strong>{result.runtime.toFixed(4)}s</strong></div>
-              <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#94a3b8' }}>Path Found:</span> <br/>
-                <span style={{ color: '#a7f3d0' }}>{result.path && result.path.length > 0 ? result.path.join(' → ') : 'No path found!'}</span>
-              </div>
-            </div>
 
-            <h4 style={{ margin: '20px 0 10px 0', color: '#94a3b8' }}>Reasoning Trace Logs</h4>
-            <div className="trace-box">
-              {result.trace.map((t, i) => <div key={i}>[{i}] {t}</div>)}
-            </div>
-          </div>
-        )}
+              <div className="glass-panel flex-1 flex flex-col min-h-[300px]">
+                <h4 className="m-0 mb-4 text-slate-300 font-medium">Reasoning Trace Logs</h4>
+                <div className="bg-black/50 p-4 rounded-xl font-mono text-xs text-blue-400/70 overflow-y-auto flex-1 max-h-[400px] border border-white/5 shadow-inner">
+                  {result.trace.map((t, i) => (
+                    <div key={i} className="py-1 border-b border-blue-500/10 last:border-0 hover:bg-white/5 hover:text-blue-300 transition-colors cursor-default">
+                      <span className="text-slate-600 mr-2">[{String(i).padStart(3, '0')}]</span> {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }

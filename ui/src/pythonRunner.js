@@ -139,6 +139,7 @@ res_dict = {
     "nodes_expanded": result.nodes_expanded,
     "runtime": result.runtime,
     "trace": result.trace,
+    "visited_sequence": result.visited_sequence,
     "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
     "advisor_report": advisor_report
 }

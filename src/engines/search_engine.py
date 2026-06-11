@@ -12,6 +12,7 @@ class SearchResult:
         self.cost = cost
         self.runtime = runtime
         self.trace = []
+        self.visited_sequence = []
 
 def run_search(problem: SearchProblem, algorithm: str) -> SearchResult:
     start_time = time.perf_counter()
@@ -42,7 +43,7 @@ def _bfs(problem: SearchProblem, result: SearchResult):
         result.max_frontier = max(result.max_frontier, len(queue))
         current, path, cost = queue.popleft()
         result.nodes_expanded += 1
-        
+        result.visited_sequence.append(current)
         result.trace.append(f"Expanded node: {current}")
         
         if problem.is_goal_state(current):
@@ -70,6 +71,7 @@ def _dfs(problem: SearchProblem, result: SearchResult):
             
         explored.add(current)
         result.nodes_expanded += 1
+        result.visited_sequence.append(current)
         result.trace.append(f"Expanded node: {current}")
         
         if problem.is_goal_state(current):
@@ -101,6 +103,7 @@ def _a_star(problem: SearchProblem, result: SearchResult):
             
         explored.add(current)
         result.nodes_expanded += 1
+        result.visited_sequence.append(current)
         result.trace.append(f"Expanded node: {current} (f={f_score:.2f})")
         
         if problem.is_goal_state(current):
@@ -131,6 +134,7 @@ def _ucs(problem: SearchProblem, result: SearchResult):
             
         explored.add(current)
         result.nodes_expanded += 1
+        result.visited_sequence.append(current)
         result.trace.append(f"Expanded node: {current} (g={cost:.2f})")
         
         if problem.is_goal_state(current):
@@ -161,6 +165,7 @@ def _greedy_best_first(problem: SearchProblem, result: SearchResult):
             
         explored.add(current)
         result.nodes_expanded += 1
+        result.visited_sequence.append(current)
         result.trace.append(f"Expanded node: {current} (h={h_val:.2f})")
         
         if problem.is_goal_state(current):
