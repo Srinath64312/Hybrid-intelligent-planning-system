@@ -1,7 +1,42 @@
 import { useState, useEffect } from 'react'
-import { Play, RotateCcw, Users, Gamepad2, Activity, Coins, TrendingUp } from 'lucide-react'
+import { Play, RotateCcw, Users, Gamepad2, Activity, Coins, TrendingUp, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
+
+// Helper recursive layout for SVG tree
+function layoutTree(node, depth = 0, context = { leafCount: 0 }) {
+  const levelHeight = 110;
+  const leafSpacing = 85;
+  const topMargin = 40;
+  const leftMargin = 50;
+  
+  if (!node) return null;
+  
+  const y = depth * levelHeight + topMargin;
+  
+  if (!node.children || node.children.length === 0) {
+    const x = context.leafCount * leafSpacing + leftMargin;
+    context.leafCount += 1;
+    return { ...node, x, y, children: [] };
+  }
+  
+  const children = node.children.map(c => layoutTree(c, depth + 1, context));
+  const x = (children[0].x + children[children.length - 1].x) / 2;
+  
+  return { ...node, x, y, children };
+}
+
+function flattenTree(node, nodes = [], links = []) {
+  if (!node) return { nodes, links };
+  nodes.push(node);
+  if (node.children) {
+    node.children.forEach(child => {
+      links.push({ source: { id: node.id, x: node.x, y: node.y }, target: child });
+      flattenTree(child, nodes, links);
+    });
+  }
+  return { nodes, links };
+}
 
 export default function GamePanel() {
   const [peas, setPeas] = useState(null)
@@ -16,6 +51,8 @@ export default function GamePanel() {
     [null, null, null],
     [null, null, null]
   ])
+  const [depthLimit, setDepthLimit] = useState(3)
+  const [hoveredNode, setHoveredNode] = useState(null)
 
   // Negotiation State
   const [negResult, setNegResult] = useState(null)
@@ -37,7 +74,7 @@ export default function GamePanel() {
   const makeAIMove = async (currentBoard) => {
     setLoading(true)
     try {
-      const data = await pythonRunner.runGame(algorithm, currentBoard)
+      const data = await pythonRunner.runGame(algorithm, currentBoard, depthLimit)
       setResult(data)
       if (data.best_action && !data.is_terminal && data.expected_utility !== undefined) {
         const [r, c] = data.best_action
@@ -118,7 +155,7 @@ export default function GamePanel() {
           <div className="flex flex-col gap-6">
             <div className="glass-panel p-6 border-rose-500/20">
               <div className="flex flex-wrap gap-4 items-end mb-6">
-                <div className="flex flex-col gap-2 flex-1">
+                <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                   <label className="text-sm font-medium text-slate-400">AI Algorithm (Plays X)</label>
                   <select 
                     value={algorithm} onChange={e => setAlgorithm(e.target.value)}
@@ -129,14 +166,24 @@ export default function GamePanel() {
                     <option value="Alpha-Beta Pruning">Alpha-Beta Pruning</option>
                   </select>
                 </div>
+                
+                <div className="flex flex-col gap-2 w-48">
+                  <label className="text-sm font-medium text-slate-400">Search Depth: {depthLimit}</label>
+                  <input 
+                    type="range" min="1" max="4" value={depthLimit} 
+                    onChange={e => setDepthLimit(parseInt(e.target.value))}
+                    className="w-full accent-rose-500 bg-slate-800 h-2 rounded-lg cursor-pointer"
+                  />
+                </div>
+                
                 <button 
                   onClick={() => makeAIMove(board)} 
                   disabled={loading || (result && result.is_terminal)}
-                  className="bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg"
+                  className="bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg cursor-pointer"
                 >
                   <Play size={18} /> AI First
                 </button>
-                <button onClick={resetGame} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all">
+                <button onClick={resetGame} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all cursor-pointer">
                   <RotateCcw size={18} />
                 </button>
               </div>
@@ -215,6 +262,247 @@ export default function GamePanel() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Game Evaluation Tree Visualizer */}
+          {result && result.evaluation_tree && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-panel p-6 border-rose-500/20 lg:col-span-2 flex flex-col gap-6 bg-gradient-to-br from-black/40 to-rose-950/5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-4 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-rose-500/10 p-2 rounded-lg text-rose-400 border border-rose-500/20">
+                    <Activity size={20} />
+                  </div>
+                  <div>
+                    <h3 className="m-0 text-lg font-bold text-slate-200">Adversarial Evaluation Tree</h3>
+                    <p className="m-0 text-xs text-slate-400 mt-0.5">
+                      Visualizing the explored states, utilities, and alpha/beta bounds during evaluation
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400" /> Max Node (AI)
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded bg-emerald-500 border border-emerald-400" /> Min Node (User)
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 border border-red-500 border-dashed" /> Pruned Branch
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Visualizer Area */}
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                
+                {/* SVG Visualizer Canvas */}
+                <div className="xl:col-span-3 bg-black/40 rounded-xl p-4 border border-white/5 overflow-auto max-h-[500px] min-h-[350px] relative custom-scrollbar">
+                  {(() => {
+                    const context = { leafCount: 0 };
+                    const laidOut = layoutTree(result.evaluation_tree, 0, context);
+                    const { nodes, links } = flattenTree(laidOut);
+                    const svgWidth = Math.max(800, context.leafCount * 85 + 100);
+                    const svgHeight = 4 * 110 + 100; // depth * levelHeight + padding
+                    
+                    return (
+                      <svg width={svgWidth} height={svgHeight} className="overflow-visible select-none">
+                        <defs>
+                          <filter id="glow-purple">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                              <feMergeNode in="coloredBlur"/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
+                          <filter id="glow-green">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                              <feMergeNode in="coloredBlur"/>
+                              <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                          </filter>
+                        </defs>
+                        
+                        {/* Links */}
+                        {links.map((link, idx) => (
+                          <line
+                            key={`link-${idx}`}
+                            x1={link.source.x}
+                            y1={link.source.y}
+                            x2={link.target.x}
+                            y2={link.target.y}
+                            stroke={link.target.pruned ? '#ef4444' : '#475569'}
+                            strokeWidth={link.target.pruned ? 2 : 1.5}
+                            strokeDasharray={link.target.pruned ? '4,4' : '0'}
+                            opacity={link.target.pruned ? 0.6 : 1}
+                            className="transition-all duration-300"
+                          />
+                        ))}
+                        
+                        {/* Nodes */}
+                        {nodes.map((node) => {
+                          const isHovered = hoveredNode?.id === node.id;
+                          const nodeColor = node.is_max ? 'rgba(168, 85, 247, 0.2)' : 'rgba(16, 185, 129, 0.2)';
+                          const nodeBorder = node.is_max ? '#a855f7' : '#10b981';
+                          const glowFilter = node.is_max ? 'url(#glow-purple)' : 'url(#glow-green)';
+                          
+                          return (
+                            <g 
+                              key={node.id} 
+                              transform={`translate(${node.x}, ${node.y})`}
+                              className="cursor-pointer group"
+                              onMouseEnter={() => setHoveredNode(node)}
+                            >
+                              {/* Glowing Background */}
+                              {isHovered && (
+                                <circle 
+                                  r={30} 
+                                  fill={nodeColor}
+                                  stroke={nodeBorder}
+                                  strokeWidth={1}
+                                  filter={glowFilter}
+                                  opacity={0.8}
+                                />
+                              )}
+                              
+                              {/* Primary Node Shape */}
+                              {node.is_max ? (
+                                // Triangle for Max
+                                <polygon
+                                  points="0,-22 20,12 -20,12"
+                                  fill={node.pruned ? '#1e293b' : nodeColor}
+                                  stroke={node.pruned ? '#ef4444' : nodeBorder}
+                                  strokeWidth={isHovered ? 2.5 : 1.5}
+                                  strokeDasharray={node.pruned ? '3,3' : '0'}
+                                  opacity={node.pruned ? 0.5 : 1}
+                                  className="transition-all duration-300"
+                                />
+                              ) : (
+                                // Circle for Min
+                                <circle
+                                  r={18}
+                                  fill={node.pruned ? '#1e293b' : nodeColor}
+                                  stroke={node.pruned ? '#ef4444' : nodeBorder}
+                                  strokeWidth={isHovered ? 2.5 : 1.5}
+                                  strokeDasharray={node.pruned ? '3,3' : '0'}
+                                  opacity={node.pruned ? 0.5 : 1}
+                                  className="transition-all duration-300"
+                                />
+                              )}
+                              
+                              {/* Miniature Board inside node */}
+                              <foreignObject 
+                                x={-10} 
+                                y={node.is_max ? -4 : -10} 
+                                width={20} 
+                                height={20}
+                                opacity={node.pruned ? 0.3 : 0.8}
+                                className="pointer-events-none"
+                              >
+                                <div className="w-5 h-5 grid grid-cols-3 gap-[1px] bg-slate-700/60 p-[0.5px] rounded-[2px] overflow-hidden">
+                                  {node.board ? node.board.flat().map((cell, idx) => (
+                                    <div 
+                                      key={idx} 
+                                      className={`w-[6px] h-[6px] flex items-center justify-center text-[4px] font-bold bg-slate-900 
+                                        ${cell === 'X' ? 'text-purple-400' : cell === 'O' ? 'text-emerald-400' : 'text-slate-600'}
+                                      `}
+                                    >
+                                      {cell !== ' ' ? cell : ''}
+                                    </div>
+                                  )) : (
+                                    Array(9).fill(0).map((_, idx) => <div key={idx} className="w-[6px] h-[6px] bg-slate-900" />)
+                                  )}
+                                </div>
+                              </foreignObject>
+
+                              {/* Value text bubble */}
+                              {node.value !== null && !node.pruned && (
+                                <g transform="translate(0, 28)">
+                                  <rect 
+                                    x={-15} 
+                                    y={-8} 
+                                    width={30} 
+                                    height={14} 
+                                    rx={3} 
+                                    fill="#0f172a" 
+                                    stroke="rgba(255,255,255,0.1)" 
+                                    strokeWidth={1}
+                                  />
+                                  <text 
+                                    textAnchor="middle" 
+                                    alignmentBaseline="middle" 
+                                    className="text-[8px] font-mono font-bold fill-rose-300"
+                                    y={-1}
+                                  >
+                                    {node.value}
+                                  </text>
+                                </g>
+                              )}
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    );
+                  })()}
+                </div>
+
+                {/* Info Panel / Details on Hover */}
+                <div className="xl:col-span-1 flex flex-col gap-4">
+                  <div className="glass-panel p-4 border-rose-500/10 bg-black/20 flex-1 flex flex-col justify-between min-h-[300px]">
+                    {hoveredNode ? (
+                      <div className="flex flex-col gap-4 h-full justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Node Info</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${hoveredNode.pruned ? 'bg-red-500/20 text-red-400 border border-red-500/30' : hoveredNode.is_max ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                              {hoveredNode.pruned ? 'PRUNED' : hoveredNode.is_max ? 'MAX TURN' : 'MIN TURN'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-col gap-1.5 font-mono text-xs text-slate-300 mt-4 bg-black/40 p-3 rounded-lg border border-white/5">
+                            <div>Depth: <strong className="text-slate-200">{hoveredNode.depth}</strong></div>
+                            <div>Value: <strong className="text-rose-400">{hoveredNode.value !== null ? hoveredNode.value : 'None (Pruned)'}</strong></div>
+                            <div>Alpha: <strong className="text-purple-400">{hoveredNode.alpha !== null ? hoveredNode.alpha : 'N/A'}</strong></div>
+                            <div>Beta: <strong className="text-emerald-400">{hoveredNode.beta !== null ? hoveredNode.beta : 'N/A'}</strong></div>
+                          </div>
+                        </div>
+
+                        {/* Zoomed Board Preview */}
+                        <div className="flex flex-col items-center mt-4">
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-3 align-self-start">State Snapshot</span>
+                          <div className="grid grid-cols-3 gap-1 bg-slate-800 p-1.5 rounded-lg shadow-xl">
+                            {hoveredNode.board ? hoveredNode.board.flat().map((cell, idx) => (
+                              <div 
+                                key={idx} 
+                                className={`w-8 h-8 flex items-center justify-center text-sm font-bold bg-slate-950 rounded
+                                  ${cell === 'X' ? 'text-purple-400 drop-shadow-[0_0_4px_rgba(192,132,252,0.6)]' : cell === 'O' ? 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]' : ''}
+                                `}
+                              >
+                                {cell !== ' ' ? cell : ''}
+                              </div>
+                            )) : (
+                              Array(9).fill(0).map((_, idx) => <div key={idx} className="w-8 h-8 bg-slate-950 rounded" />)
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center h-full text-slate-500 gap-3 py-10">
+                        <Info size={32} className="stroke-slate-600" />
+                        <p className="text-sm m-0">Hover over any node in the tree diagram to view details and board zoom</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
         </div>
       ) : (
         // Negotiation Mode

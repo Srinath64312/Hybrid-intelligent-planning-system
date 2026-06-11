@@ -206,7 +206,7 @@ json.dumps(res_dict)
     return runPythonCode(code, { n, algorithm });
   },
   
-  async runGame(algorithm, boardState) {
+  async runGame(algorithm, boardState, depthLimit = 3) {
     const code = `
 from src.problems.tictactoe import TicTacToeProblem, TicTacToeState
 from src.engines.game_engine import run_minimax
@@ -244,10 +244,21 @@ if is_terminal:
         "utility": problem.evaluate(state),
         "winning_line": state.get_winning_line(),
         "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
-        "advisor_report": advisor_report
+        "advisor_report": advisor_report,
+        "evaluation_tree": {
+            "id": "root",
+            "board": state.board,
+            "is_max": problem.is_max_turn(state),
+            "depth": depthLimit,
+            "value": problem.evaluate(state),
+            "pruned": False,
+            "alpha": None,
+            "beta": None,
+            "children": []
+        }
     }
 else:
-    result = run_minimax(problem, state, 9, use_alpha_beta)
+    result = run_minimax(problem, state, depthLimit, use_alpha_beta)
     next_state = problem.get_next_state(state, result.best_action) if result.best_action else state
     is_term_next = problem.is_terminal(next_state)
     util_next = problem.evaluate(next_state) if is_term_next else None
@@ -264,33 +275,45 @@ else:
         "utility": util_next,
         "winning_line": winning_line,
         "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
-        "advisor_report": advisor_report
+        "advisor_report": advisor_report,
+        "evaluation_tree": result.evaluation_tree
     }
+import json
 json.dumps(res_dict)
 `;
-    return runPythonCode(code, { algorithm, boardState });
+    return runPythonCode(code, { algorithm, boardState, depthLimit });
   },
   
-  async runBayes(method, evidence) {
+  async runBayes(method, queryVar, evidence, customCpts, numSamples = 5000) {
     const code = `
-from src.problems.diagnosis import build_medical_network
-from src.engines.bayes_engine import run_exact_inference, run_rejection_sampling
+from src.engines.bayes_engine import BayesNetwork, run_exact_inference, run_rejection_sampling
 
-bn = build_medical_network()
+bn = BayesNetwork()
+for name, data in customCpts.items():
+    parents = data["parents"]
+    table = {}
+    for key_str, prob in data["table"].items():
+        if key_str == "":
+            key = ()
+        else:
+            key = tuple(k == "true" for k in key_str.split(","))
+        table[key] = float(prob)
+    bn.add_node(name, parents, table)
 
 if method == "Exact Enumeration":
-    result = run_exact_inference(bn, "Flu", evidence)
+    result = run_exact_inference(bn, queryVar, evidence)
 else:
-    result = run_rejection_sampling(bn, "Flu", evidence, 5000)
+    result = run_rejection_sampling(bn, queryVar, evidence, numSamples)
 
 res_dict = {
     "posterior_prob": result.posterior_prob,
     "runtime": result.runtime,
     "trace": result.trace
 }
+import json
 json.dumps(res_dict)
 `;
-    return runPythonCode(code, { method, evidence });
+    return runPythonCode(code, { method, queryVar, evidence, customCpts, numSamples });
   },
   
   async runAdvisor(graphData) {
