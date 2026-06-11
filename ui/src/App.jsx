@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, Home, MessageSquare, Loader2, AlertTriangle } from 'lucide-react'
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, Home, Loader2, AlertTriangle } from 'lucide-react'
 import { pythonRunner } from './pythonRunner'
 import SearchPanel from './components/SearchPanel'
 import CspPanel from './components/CspPanel'
@@ -11,9 +13,9 @@ import SchedulePanel from './components/SchedulePanel'
 import './index.css'
 
 function App() {
-  const [activeTab, setActiveTab] = useState('home')
-  const [pyStatus, setPyStatus] = useState('initializing') // 'initializing', 'ready', 'error'
+  const [pyStatus, setPyStatus] = useState('initializing')
   const [pyStatusMessage, setPyStatusMessage] = useState('Loading Python WebAssembly runtime...')
+  const location = useLocation()
 
   useEffect(() => {
     pythonRunner.initialize((msg) => {
@@ -30,141 +32,112 @@ function App() {
   }, []);
 
   const tabs = [
-    { id: 'home', icon: Home, label: 'Home Dashboard' },
-    { id: 'search', icon: Grid, label: 'Search Engine (Maze)' },
-    { id: 'csp', icon: CalendarDays, label: 'CSP Engine (N-Queens)' },
-    { id: 'game', icon: Gamepad2, label: 'Game AI (Tic-Tac-Toe)' },
-    { id: 'bayes', icon: Activity, label: 'Probabilistic (Diagnosis)' },
-    { id: 'advisor', icon: Lightbulb, label: 'Advisor (Expert Systems)' },
-    { id: 'schedule', icon: CalendarDays, label: 'Scheduling CSP' }
+    { id: 'home', path: '/home', icon: Home, label: 'Home Dashboard' },
+    { id: 'search', path: '/search', icon: Grid, label: 'Search Engine (Maze)' },
+    { id: 'csp', path: '/csp', icon: CalendarDays, label: 'CSP Engine (N-Queens)' },
+    { id: 'game', path: '/game', icon: Gamepad2, label: 'Game AI (Tic-Tac-Toe)' },
+    { id: 'bayes', path: '/bayes', icon: Activity, label: 'Probabilistic (Diagnosis)' },
+    { id: 'advisor', path: '/advisor', icon: Lightbulb, label: 'Advisor (Expert Systems)' },
+    { id: 'schedule', path: '/schedule', icon: CalendarDays, label: 'Scheduling CSP' }
   ]
 
   if (pyStatus !== 'ready') {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        width: '100vw',
-        background: '#0f172a',
-        backgroundImage: 'radial-gradient(at 50% 50%, #1e1b4b 0%, #0f172a 100%)',
-        color: '#e2e8f0',
-        padding: '20px',
-        boxSizing: 'border-box'
-      }}>
-        <div className="glass-panel" style={{
-          maxWidth: '500px',
-          width: '100%',
-          textAlign: 'center',
-          padding: '40px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '24px',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
-          border: '1px solid rgba(168, 85, 247, 0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Brain size={48} color="#a855f7" className={pyStatus === 'initializing' ? 'pulse' : ''} />
-            <h1 style={{
-              margin: 0,
-              fontSize: '2rem',
-              background: 'linear-gradient(to right, #a855f7, #6366f1)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
+      <div className="flex flex-col items-center justify-center min-h-screen w-full bg-slate-900 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-slate-900 to-black text-slate-200 p-5 box-border">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="glass-panel max-w-lg w-full text-center p-10 flex flex-col items-center gap-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-purple-500/20 rounded-2xl"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div animate={pyStatus === 'initializing' ? { scale: [1, 1.1, 1], opacity: [1, 0.7, 1] } : {}} transition={{ repeat: Infinity, duration: 2 }}>
+              <Brain size={48} className="text-purple-500" />
+            </motion.div>
+            <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">
               HIPS Platform
             </h1>
           </div>
           
           {pyStatus === 'initializing' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
-              <div style={{ animation: 'spin 1.5s linear infinite', color: '#6366f1' }}>
+            <div className="flex flex-col items-center gap-4 w-full">
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="text-indigo-500">
                 <Loader2 size={36} />
-              </div>
-              <p style={{ margin: 0, fontSize: '1.1rem', color: '#cbd5e1', fontWeight: 500 }}>
+              </motion.div>
+              <p className="m-0 text-lg text-slate-300 font-medium">
                 {pyStatusMessage}
               </p>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              <span className="text-sm text-slate-500">
                 Running Python directly in your browser using WebAssembly. This first-time download may take 5-10 seconds.
               </span>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
-              <AlertTriangle size={48} color="#ef4444" />
-              <h3 style={{ margin: 0, color: '#ef4444' }}>Initialization Failed</h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#94a3b8', wordBreak: 'break-word' }}>
+            <div className="flex flex-col items-center gap-4 w-full">
+              <AlertTriangle size={48} className="text-red-500" />
+              <h3 className="m-0 text-red-500 font-bold text-xl">Initialization Failed</h3>
+              <p className="m-0 text-[0.95rem] text-slate-400 break-words">
                 {pyStatusMessage}
               </p>
-              <button className="btn" onClick={() => window.location.reload()} style={{ marginTop: '10px' }}>
+              <button className="btn mt-2" onClick={() => window.location.reload()}>
                 Retry Loading
               </button>
             </div>
           )}
-        </div>
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .pulse {
-            animation: pulse 2s infinite ease-in-out;
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
-          }
-        `}</style>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="flex h-screen overflow-hidden bg-slate-900 text-slate-200">
       {/* Sidebar */}
-      <div className="glass-panel" style={{ width: '280px', margin: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <Brain color="#a855f7" size={32} />
-          <h2 style={{ margin: 0, fontSize: '1.2rem', background: 'linear-gradient(to right, #a855f7, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <motion.div 
+        initial={{ x: -300 }}
+        animate={{ x: 0 }}
+        className="glass-panel w-72 m-5 flex flex-col gap-5 border border-white/5 rounded-2xl shadow-xl z-10 p-5"
+      >
+        <div className="flex items-center gap-3 pb-5 border-b border-white/10">
+          <Brain className="text-purple-500" size={32} />
+          <h2 className="m-0 text-xl font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">
             HIPS Platform
           </h2>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="flex flex-col gap-2">
           {tabs.map(tab => (
-            <button 
+            <NavLink 
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '12px 16px',
-                background: activeTab === tab.id ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
-                border: `1px solid ${activeTab === tab.id ? 'rgba(168, 85, 247, 0.3)' : 'transparent'}`,
-                color: activeTab === tab.id ? '#c084fc' : 'rgba(255,255,255,0.7)',
-                borderRadius: '8px', cursor: 'pointer',
-                textAlign: 'left', transition: 'all 0.2s',
-                fontWeight: activeTab === tab.id ? '600' : '400'
-              }}
+              to={tab.path}
+              className={({ isActive }) => `
+                flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-300
+                ${isActive 
+                  ? 'bg-purple-500/15 border border-purple-500/30 text-purple-400 font-semibold shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
+                  : 'border border-transparent text-white/70 hover:bg-white/5 hover:text-white'
+                }
+              `}
             >
               <tab.icon size={20} />
               {tab.label}
-            </button>
+            </NavLink>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '20px 20px 20px 0', overflowY: 'auto' }}>
-        <div className="glass-panel" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          {activeTab === 'home' && <HomePanel setActiveTab={setActiveTab} />}
-          {activeTab === 'search' && <SearchPanel />}
-          {activeTab === 'csp' && <CspPanel />}
-          {activeTab === 'game' && <GamePanel />}
-          {activeTab === 'bayes' && <BayesPanel />}
-          {activeTab === 'advisor' && <AdvisorPanel />}
-          {activeTab === 'schedule' && <SchedulePanel />}
+      <div className="flex-1 p-5 pl-0 overflow-y-auto">
+        <div className="glass-panel min-h-[calc(100vh-40px)] rounded-2xl relative border border-white/5 shadow-2xl overflow-hidden p-0">
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<HomePanel />} />
+              <Route path="/search" element={<SearchPanel />} />
+              <Route path="/csp" element={<CspPanel />} />
+              <Route path="/game" element={<GamePanel />} />
+              <Route path="/bayes" element={<BayesPanel />} />
+              <Route path="/advisor" element={<AdvisorPanel />} />
+              <Route path="/schedule" element={<SchedulePanel />} />
+            </Routes>
+          </AnimatePresence>
         </div>
       </div>
     </div>

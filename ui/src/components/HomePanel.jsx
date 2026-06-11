@@ -1,6 +1,9 @@
 import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, ChevronRight, Calendar } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 
-export default function HomePanel({ setActiveTab }) {
+export default function HomePanel() {
+  const navigate = useNavigate()
   const modules = [
     { id: 'search', title: 'Search Engine', icon: Grid, color: '#3b82f6', desc: 'Pathfinding in 2D grids using BFS, DFS, and A*.' },
     { id: 'csp', title: 'Constraint Satisfaction', icon: CalendarDays, color: '#f59e0b', desc: 'Solving the N-Queens problem using Backtracking.' },
@@ -11,66 +14,61 @@ export default function HomePanel({ setActiveTab }) {
   ]
 
   return (
-    <div style={{ padding: '20px', animation: 'fadeIn 0.5s ease-out' }}>
-      <div style={{ textAlign: 'center', marginBottom: '50px', marginTop: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-          <div style={{ background: 'rgba(168, 85, 247, 0.2)', padding: '20px', borderRadius: '50%', boxShadow: '0 0 30px rgba(168, 85, 247, 0.4)' }}>
-            <Brain size={64} color="#c084fc" />
-          </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="p-8"
+    >
+      <div className="text-center mb-12 mt-8">
+        <div className="flex justify-center mb-5">
+          <motion.div 
+            animate={{ boxShadow: ['0 0 20px rgba(168,85,247,0.4)', '0 0 40px rgba(168,85,247,0.8)', '0 0 20px rgba(168,85,247,0.4)'] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="bg-purple-500/20 p-5 rounded-full"
+          >
+            <Brain size={64} className="text-purple-400" />
+          </motion.div>
         </div>
-        <h1 style={{ fontSize: '3em', margin: '0 0 10px 0', background: 'linear-gradient(to right, #a855f7, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
           Hybrid Intelligent Problem Solver (HIPS)
         </h1>
-        <p style={{ fontSize: '1.2em', color: '#94a3b8', maxWidth: '800px', margin: '0 auto', lineHeight: '1.6' }}>
+        <p className="text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed">
           A comprehensive artificial intelligence suite demonstrating core academic algorithms.
           Navigate through the modules below to interact with Graph Search, Constraint Satisfaction, Game Theory, and Probabilistic Models.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', maxWidth: '1000px', margin: '0 auto' }}>
-        {modules.map((mod) => (
-          <div 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {modules.map((mod, index) => (
+          <motion.div 
             key={mod.id}
-            onClick={() => setActiveTab(mod.id)}
-            style={{
-              background: 'rgba(15, 23, 42, 0.6)',
-              border: `1px solid rgba(255,255,255,0.1)`,
-              borderRadius: '16px',
-              padding: '25px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '15px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-5px)'
-              e.currentTarget.style.border = `1px solid ${mod.color}`
-              e.currentTarget.style.boxShadow = `0 10px 20px rgba(0,0,0,0.3), 0 0 15px ${mod.color}33`
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none'
-              e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            onClick={() => navigate(`/${mod.id}`)}
+            className="group bg-slate-900/60 border border-white/10 rounded-2xl p-6 cursor-pointer flex flex-col gap-4 relative overflow-hidden"
+            whileHover={{ y: -5, borderColor: mod.color, boxShadow: `0 10px 30px -10px ${mod.color}` }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ background: `${mod.color}22`, padding: '12px', borderRadius: '12px' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex items-center justify-between relative z-10">
+              <div className="p-3 rounded-xl" style={{ backgroundColor: `${mod.color}22` }}>
                 <mod.icon size={28} color={mod.color} />
               </div>
-              <ChevronRight color="rgba(255,255,255,0.3)" />
+              <ChevronRight className="text-white/30 group-hover:text-white transition-colors" />
             </div>
-            <div>
-              <h3 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '1.3em' }}>{mod.title}</h3>
-              <p style={{ margin: 0, color: '#94a3b8', lineHeight: '1.5' }}>{mod.desc}</p>
+            <div className="relative z-10">
+              <h3 className="m-0 mb-2 text-slate-200 text-xl font-bold">{mod.title}</h3>
+              <p className="m-0 text-slate-400 leading-relaxed">{mod.desc}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
       
-      <div style={{ textAlign: 'center', marginTop: '60px', color: '#64748b', fontSize: '0.9em' }}>
+      <div className="text-center mt-16 text-slate-500 text-sm">
         Built for Advanced AI Coursework • HIPS Architecture Version 1.0
       </div>
-    </div>
+    </motion.div>
   )
 }
