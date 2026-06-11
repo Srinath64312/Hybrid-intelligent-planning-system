@@ -38,6 +38,14 @@ class CSPProblem(Generic[V, D], ABC):
         """Check if assigning value to variable violates constraints given current assignment."""
         pass
 
+    def evaluate_constraints(self, variable: V, value: D, assignment: Dict[V, D]) -> Dict[str, Any]:
+        """Returns detailed explainability report of constraint evaluations."""
+        return {
+            "passed": self.is_consistent(variable, value, assignment),
+            "probability": 1.0,
+            "details": []
+        }
+
 
 class GameProblem(Generic[S, A], ABC):
     """Abstract class for Two-Player Zero-Sum Games (CO4)"""

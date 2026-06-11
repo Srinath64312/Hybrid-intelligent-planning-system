@@ -10,6 +10,7 @@ class CSPResult:
         self.constraint_violations = 0
         self.runtime = 0.0
         self.trace = []
+        self.explainability_reports = []
 
 def run_csp(problem: CSPProblem) -> CSPResult:
     result = CSPResult()
@@ -31,8 +32,19 @@ def _backtracking_search(assignment: Dict[Any, Any], problem: CSPProblem, result
     for value in problem.domains[first]:
         result.assignments_tried += 1
         
-        if problem.is_consistent(first, value, assignment):
-            result.trace.append(f"Assigned {value} to {first}")
+        # Explainability Evaluation
+        eval_report = problem.evaluate_constraints(first, value, assignment)
+        report_entry = {
+            "variable": first,
+            "value": value,
+            "probability": eval_report["probability"],
+            "details": eval_report["details"],
+            "passed": eval_report["passed"]
+        }
+        result.explainability_reports.append(report_entry)
+        
+        if eval_report["passed"]:
+            result.trace.append(f"Assigned {value} to {first} (Bayesian Prob: {eval_report['probability']:.2f})")
             local_assignment = assignment.copy()
             local_assignment[first] = value
             
@@ -44,6 +56,8 @@ def _backtracking_search(assignment: Dict[Any, Any], problem: CSPProblem, result
             result.backtracks += 1
         else:
             result.constraint_violations += 1
-            result.trace.append(f"Violation: Cannot assign {value} to {first}")
+            reasons = [d["reason"] for d in eval_report["details"] if not d["passed"]]
+            reason_str = " | ".join(reasons)
+            result.trace.append(f"Violation: Cannot assign {value} to {first}. Reasons: {reason_str}")
             
     return None

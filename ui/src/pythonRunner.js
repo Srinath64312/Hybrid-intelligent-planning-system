@@ -10,7 +10,8 @@ const filesToLoad = [
   'problems/nqueens.py',
   'problems/tictactoe.py',
   'problems/diagnosis.py',
-  'problems/scheduling.py'
+  'problems/scheduling.py',
+  'problems/negotiation.py'
 ];
 
 let pyodideInstance = null;
@@ -284,10 +285,22 @@ res_dict = {
     "assignments_tried": result.assignments_tried,
     "backtracks": result.backtracks,
     "runtime": result.runtime,
-    "trace": result.trace
+    "trace": result.trace,
+    "explainability_reports": result.explainability_reports
 }
 json.dumps(res_dict)
 `;
     return runPythonCode(code, { relax_newton, relax_cohort });
+  },
+
+  async runNegotiation() {
+    const code = `
+from src.problems.negotiation import MultiAgentNegotiation
+negotiation = MultiAgentNegotiation()
+result = negotiation.run_auction()
+import json
+json.dumps(result)
+`;
+    return runPythonCode(code, {});
   }
 };

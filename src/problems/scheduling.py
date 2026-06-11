@@ -49,3 +49,52 @@ class SchedulingProblem(CSPProblem[str, Tuple[str, str]]):
                     return False
                     
         return True
+
+    def evaluate_constraints(self, variable: str, value: Tuple[str, str], assignment: Dict[str, Tuple[str, str]]) -> Dict:
+        slot, room = value
+        details = []
+        passed_all = True
+        
+        # Hard constraints built into domains
+        if variable in ["BIO101", "CHEM101"]:
+            if room == "Lab_A_Wet":
+                details.append({"name": "Wet Lab Requirement", "passed": True, "weight": 0.99, "reason": f"{variable} successfully scheduled in Wet Lab."})
+            else:
+                passed_all = False
+                details.append({"name": "Wet Lab Requirement", "passed": False, "weight": 0.01, "reason": f"{variable} MUST be in a Wet Lab."})
+                
+            if slot == "Tuesday_0900":
+                passed_all = False
+                details.append({"name": "Lab Availability", "passed": False, "weight": 0.05, "reason": "Wet Lab is closed on Tuesdays."})
+                
+        if variable == "PHYS101" and not self.relax_newton and slot == "Tuesday_0900":
+            passed_all = False
+            details.append({"name": "Professor Availability", "passed": False, "weight": 0.10, "reason": "Dr. Newton only teaches on Wednesdays."})
+            
+        for other_var, other_val in assignment.items():
+            other_slot, other_room = other_val
+            
+            # Constraint 1: Room Overlap
+            if slot == other_slot and room == other_room:
+                passed_all = False
+                details.append({"name": "Room Conflict", "passed": False, "weight": 0.0, "reason": f"Room {room} is already booked by {other_var} at {slot}."})
+                
+            # Constraint 2: Cohort Overlap
+            if not self.relax_cohort and slot == other_slot:
+                passed_all = False
+                details.append({"name": "Cohort Conflict", "passed": False, "weight": 0.15, "reason": f"Students cannot be in {variable} and {other_var} simultaneously at {slot}."})
+
+        if passed_all:
+            details.append({"name": "All Valid", "passed": True, "weight": 0.85, "reason": "Assignment satisfies all current constraints."})
+
+        # Calculate a bayesian probability of success for this branch
+        # Product of weights of passed constraints
+        prob = 1.0
+        for d in details:
+            prob *= d["weight"] if d["passed"] else (1.0 - d["weight"])
+            
+        return {
+            "passed": passed_all,
+            "probability": round(prob, 4),
+            "details": details
+        }
