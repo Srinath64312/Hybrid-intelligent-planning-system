@@ -179,24 +179,31 @@ json.dumps({
     return runPythonCode(code, { algorithm, grid, start, goal, heuristic });
   },
   
-  async runCsp(n) {
+  async runCsp(n, algorithm = "Backtracking (MRV+FC)") {
     const code = `
 from src.problems.nqueens import NQueensProblem
-from src.engines.csp_engine import run_csp
+from src.engines.csp_engine import run_csp, run_local_search
 
 problem = NQueensProblem(n)
-result = run_csp(problem)
+
+if algorithm == "Backtracking (MRV+FC)":
+    result = run_csp(problem)
+else:
+    result = run_local_search(problem, algorithm)
 
 res_dict = {
     "assignment": result.assignment,
     "assignments_tried": result.assignments_tried,
     "backtracks": result.backtracks,
     "runtime": result.runtime,
-    "trace": result.trace[-50:]
+    "trace": result.trace[-50:],
+    "visited_sequence": result.visited_sequence,
+    "explainability_reports": result.explainability_reports
 }
+import json
 json.dumps(res_dict)
 `;
-    return runPythonCode(code, { n });
+    return runPythonCode(code, { n, algorithm });
   },
   
   async runGame(algorithm, boardState) {
@@ -311,6 +318,7 @@ res_dict = {
     "backtracks": result.backtracks,
     "runtime": result.runtime,
     "trace": result.trace,
+    "visited_sequence": result.visited_sequence,
     "explainability_reports": result.explainability_reports
 }
 json.dumps(res_dict)

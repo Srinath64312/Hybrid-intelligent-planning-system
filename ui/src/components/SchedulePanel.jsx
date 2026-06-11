@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Calendar, AlertTriangle, CheckCircle, RefreshCw, Info, ChevronDown, ChevronUp, Bot } from 'lucide-react'
+import { Play, Pause, Square, FastForward, Calendar, AlertTriangle, CheckCircle, RefreshCw, Info, ChevronDown, ChevronUp, Bot, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
 import { anthropicClient } from '../anthropicClient'
@@ -9,7 +9,22 @@ export default function SchedulePanel() {
   const [relaxCohort, setRelaxCohort] = useState(false)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playbackIndex, setPlaybackIndex] = useState(0)
+  const [showDomains, setShowDomains] = useState(true)
   
+  useEffect(() => {
+    let interval;
+    if (isPlaying && result && result.visited_sequence && playbackIndex < result.visited_sequence.length) {
+      interval = setInterval(() => {
+        setPlaybackIndex(prev => prev + 1);
+      }, 700); // 700ms per step for timetable
+    } else if (playbackIndex >= (result?.visited_sequence?.length || 0)) {
+      setIsPlaying(false);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, playbackIndex, result]);
+
   // Explainability specific state
   const [expandedReport, setExpandedReport] = useState(null)
 
@@ -51,14 +66,29 @@ export default function SchedulePanel() {
     setExpandedReport(null)
     setSummary(null)
     setApiKeyError('')
+    setIsPlaying(false)
+    setPlaybackIndex(0)
     try {
       const data = await pythonRunner.runSchedule(relaxNewton, relaxCohort)
       setResult(data)
+      setIsPlaying(true)
     } catch (err) {
       console.error(err)
       alert("Failed to solve schedule CSP via Python solver.")
     }
     setLoading(false)
+  }
+
+  const resetTracer = () => {
+    setIsPlaying(false)
+    setPlaybackIndex(0)
+  }
+
+  const stepForward = () => {
+    if (result && playbackIndex < result.visited_sequence.length) {
+      setIsPlaying(false)
+      setPlaybackIndex(prev => prev + 1)
+    }
   }
 
   // Course Details
@@ -81,15 +111,53 @@ export default function SchedulePanel() {
 
   // Map assignments to slot-room grid
   const getAssignmentAt = (slotId, roomId) => {
-    if (!result || !result.assignment) return null
-    const matches = []
-    for (const [course, val] of Object.entries(result.assignment)) {
-      const [assignedSlot, assignedRoom] = val
-      if (assignedSlot === slotId && assignedRoom === roomId) {
-        matches.push(course)
+    if (!result) return null
+    
+    // Determine the current state to show
+    let currentAssignment = result.assignment
+    let currentDomains = {}
+    
+    if (result.visited_sequence && playbackIndex > 0) {
+      const step = result.visited_sequence[playbackIndex - 1]
+      currentAssignment = step.assignment
+      currentDomains = step.domains
+    } else if (playbackIndex === 0) {
+      currentAssignment = {}
+      if (result.visited_sequence && result.visited_sequence.length > 0) {
+        currentDomains = result.visited_sequence[0].domains
       }
     }
-    return matches
+
+    const matches = []
+    const prunedBy = []
+    const availableFor = []
+
+    if (currentAssignment) {
+      for (const [course, val] of Object.entries(currentAssignment)) {
+        const [assignedSlot, assignedRoom] = val
+        if (assignedSlot === slotId && assignedRoom === roomId) {
+          matches.push(course)
+        }
+      }
+    }
+    
+    // Check domains for unassigned courses
+    if (currentDomains && showDomains) {
+      for (const course of Object.keys(courseDetails)) {
+        if (!currentAssignment || !currentAssignment[course]) {
+          const doms = currentDomains[course] || []
+          // Check if this slot/room is in the domain
+          const isValid = doms.some(d => d[0] === slotId && d[1] === roomId)
+          if (isValid) {
+            availableFor.push(course)
+          } else {
+            prunedBy.push(course)
+          }
+        }
+      }
+    }
+    
+    return { matches, prunedBy, availableFor }
   }
 
   return (
@@ -173,13 +241,17 @@ export default function SchedulePanel() {
                   <div className="font-semibold text-slate-300 text-sm">{slot.label}</div>
                   
                   {rooms.map(room => {
-                    const assignedCourses = getAssignmentAt(slot.id, room.id)
+                    const data = getAssignmentAt(slot.id, room.id)
+                    const assignedCourses = data ? data.matches : []
+                    const prunedBy = data ? data.prunedBy : []
+                    const availableFor = data ? data.availableFor : []
+                    
                     const hasConflict = assignedCourses && assignedCourses.length > 1
 
                     return (
                       <div 
                         key={room.id} 
-                        className={`min-h-[80px] rounded-xl flex flex-col gap-2 p-2 items-center justify-center border-2 transition-all duration-500
+                        className={`min-h-[80px] rounded-xl flex flex-col gap-2 p-2 items-center justify-center border-2 transition-all duration-500 relative
                           ${hasConflict ? 'bg-red-500/10 border-red-500/50' : 'bg-black/20 border-white/5'}
                         `}
                       >
@@ -190,7 +262,7 @@ export default function SchedulePanel() {
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               key={course}
-                              className={`${info.color} w-full text-white p-2 rounded-lg text-center shadow-lg`}
+                              className={`${info.color} w-full text-white p-2 rounded-lg text-center shadow-lg relative z-10`}
                             >
                               <div className="font-bold text-sm">{course}</div>
                               <div className="text-xs opacity-90">{info.name}</div>
@@ -201,12 +273,67 @@ export default function SchedulePanel() {
                         {(!assignedCourses || assignedCourses.length === 0) && (
                           <span className="text-slate-600 text-xs">Empty Slot</span>
                         )}
+                        
+                        {/* Domain Pruning Visualization */}
+                        {showDomains && (!assignedCourses || assignedCourses.length === 0) && (
+                          <div className="absolute inset-0 flex flex-wrap content-start p-1 gap-1 pointer-events-none">
+                            {availableFor.map(c => (
+                              <div key={c} className={`text-[0.6rem] font-bold px-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30`}>
+                                {c}
+                              </div>
+                            ))}
+                            {prunedBy.map(c => (
+                              <div key={c} className={`text-[0.6rem] font-bold px-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 line-through opacity-50`}>
+                                {c}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
                 </div>
               ))}
             </div>
+            
+            {result && result.visited_sequence && (
+              <AnimatePresence>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                  className="mt-6 bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg z-20 flex flex-col gap-2"
+                >
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-purple-400 font-bold">Domain Pruning Tracer</span>
+                    <span className="text-slate-400">Step {playbackIndex} / {result.visited_sequence.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <button 
+                      onClick={() => setShowDomains(!showDomains)} 
+                      className="text-xs flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+                    >
+                      {showDomains ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showDomains ? "Hide Domain Pruning" : "Show Domain Pruning"}
+                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={resetTracer} className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors"><Square size={14} /></button>
+                      {isPlaying ? (
+                        <button onClick={() => setIsPlaying(false)} className="p-1.5 bg-amber-600 hover:bg-amber-500 rounded text-white transition-colors"><Pause size={14} /></button>
+                      ) : (
+                        <button onClick={() => setIsPlaying(true)} className="p-1.5 bg-emerald-600 hover:bg-emerald-500 rounded text-white transition-colors"><Play size={14} /></button>
+                      )}
+                      <button onClick={stepForward} className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors"><FastForward size={14} /></button>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="bg-purple-500 h-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(playbackIndex / result.visited_sequence.length) * 100}%` }}
+                    />
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
 
           {/* LLM Summarizer API Key Input */}
