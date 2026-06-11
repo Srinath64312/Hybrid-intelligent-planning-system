@@ -3,6 +3,8 @@ from src.core.problem import CSPProblem
 
 class SchedulingProblem(CSPProblem[str, Tuple[str, str]]):
     def __init__(self, relax_newton: bool = False, relax_cohort: bool = False):
+        self.relax_newton = relax_newton
+        self.relax_cohort = relax_cohort
         # Variables: Courses to schedule
         variables = ["BIO101", "CHEM101", "PHYS101"]
         
