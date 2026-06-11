@@ -43,7 +43,7 @@ function App() {
 
   if (pyStatus !== 'ready') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full bg-slate-900 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-slate-900 to-black text-slate-200 p-5 box-border">
+      <div className="flex flex-col items-center justify-center min-h-screen w-full text-slate-200 p-5 box-border bg-transparent">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -89,7 +89,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-900 text-slate-200">
+    <div className="flex h-screen overflow-hidden text-slate-200 bg-transparent">
       {/* Sidebar */}
       <motion.div 
         initial={{ x: -300 }}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Pause, Square, FastForward, Settings2, Activity } from 'lucide-react'
+import { Play, Pause, Square, FastForward, Settings2, Activity, Shuffle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
 
@@ -15,6 +15,8 @@ export default function SearchPanel() {
     [0, 1, 1, 1, 0],
     [0, 0, 0, 0, 0]
   ])
+  const [mazeSize, setMazeSize] = useState(5)
+  const [mazeDensity, setMazeDensity] = useState(0.2)
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false)
@@ -70,6 +72,20 @@ export default function SearchPanel() {
   const resetTracer = () => {
     setIsPlaying(false)
     setPlaybackIndex(0)
+  }
+
+  const handleGenerateMaze = async () => {
+    setLoading(true)
+    setResult(null)
+    resetTracer()
+    try {
+      const data = await pythonRunner.generateMaze(mazeSize, mazeDensity)
+      setGrid(data.grid)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to generate maze.")
+    }
+    setLoading(false)
   }
 
   const stepForward = () => {
@@ -185,12 +201,45 @@ export default function SearchPanel() {
             )}
           </AnimatePresence>
           
+          {/* Maze Grid Controls */}
+          <div className="glass-panel p-6 border-emerald-500/20">
+            <h3 className="m-0 mb-4 text-emerald-400 font-semibold flex items-center gap-2">Graph Complexity Controls</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <label className="text-sm font-medium text-slate-400">Grid Size</label>
+                    <span className="text-sm text-emerald-300 font-bold">{mazeSize}x{mazeSize}</span>
+                  </div>
+                  <input type="range" min="3" max="15" value={mazeSize} onChange={e => setMazeSize(parseInt(e.target.value))} className="w-full accent-emerald-500" />
+                </div>
+                <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <label className="text-sm font-medium text-slate-400">Obstacle Density</label>
+                    <span className="text-sm text-emerald-300 font-bold">{Math.round(mazeDensity * 100)}%</span>
+                  </div>
+                  <input type="range" min="0" max="0.5" step="0.05" value={mazeDensity} onChange={e => setMazeDensity(parseFloat(e.target.value))} className="w-full accent-emerald-500" />
+                </div>
+              </div>
+              <button 
+                onClick={handleGenerateMaze} 
+                disabled={loading}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-all border border-emerald-500/30 hover:border-emerald-500/60"
+              >
+                <Shuffle size={18} /> Generate New Maze
+              </button>
+            </div>
+          </div>
+
           {/* Maze Grid */}
-          <div className="glass-panel flex-1 flex flex-col items-center justify-center bg-black/20 p-8">
-            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, minmax(3rem, 1fr))' }}>
+          <div className="glass-panel flex-1 flex flex-col items-center justify-center bg-black/20 p-8 min-h-[400px]">
+            <div 
+              className="grid gap-1 sm:gap-2 max-w-full overflow-auto" 
+              style={{ gridTemplateColumns: `repeat(${grid.length}, minmax(1.5rem, 4rem))` }}
+            >
               {grid.map((row, r) => row.map((cell, c) => {
                 const isStart = r === 0 && c === 0
-                const isGoal = r === 4 && c === 4
+                const isGoal = r === grid.length - 1 && c === grid[0].length - 1
                 
                 // Determine Tracer State
                 let isVisited = false;
@@ -252,7 +301,7 @@ export default function SearchPanel() {
                     animate={{ backgroundColor: bgColor, boxShadow: shadow }}
                     transition={{ duration: 0.3 }}
                     className={`
-                      w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center font-bold text-lg border-2
+                      aspect-square rounded-md sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-lg border-2
                       ${(isStart || isGoal) ? 'cursor-not-allowed' : 'cursor-pointer hover:border-slate-400'}
                       ${bgColor} ${textColor}
                     `}

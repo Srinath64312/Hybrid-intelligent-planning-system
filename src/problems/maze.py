@@ -1,5 +1,24 @@
 from typing import List, Tuple
 from src.core.problem import SearchProblem
+import random
+
+def generate_maze(size: int = 5, density: float = 0.2) -> Tuple[List[List[int]], Tuple[int, int], Tuple[int, int]]:
+    """Generates a random maze of `size x size` with obstacle `density`."""
+    grid = [[0 for _ in range(size)] for _ in range(size)]
+    
+    for r in range(size):
+        for c in range(size):
+            if random.random() < density:
+                grid[r][c] = 1
+                
+    start = (0, 0)
+    goal = (size - 1, size - 1)
+    
+    # Ensure start and goal are open
+    grid[start[0]][start[1]] = 0
+    grid[goal[0]][goal[1]] = 0
+    
+    return grid, start, goal
 
 class MazeProblem(SearchProblem[Tuple[int, int], str]):
     def __init__(self, grid: List[List[int]], start: Tuple[int, int], goal: Tuple[int, int]):

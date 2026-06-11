@@ -48,7 +48,7 @@ export default function HomePanel() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             onClick={() => navigate(`/${mod.id}`)}
-            className="group bg-slate-900/60 border border-white/10 rounded-2xl p-6 cursor-pointer flex flex-col gap-4 relative overflow-hidden"
+            className="group glass-panel border border-white/10 rounded-2xl p-6 cursor-pointer flex flex-col gap-4 relative overflow-hidden"
             whileHover={{ y: -5, borderColor: mod.color, boxShadow: `0 10px 30px -10px ${mod.color}` }}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

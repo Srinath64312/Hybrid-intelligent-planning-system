@@ -113,15 +113,24 @@ export const pythonRunner = {
     const code = `
 from src.core.peas import get_peas_analysis
 peas = get_peas_analysis(category)
-json.dumps({
-    "performance": peas.performance_measure,
-    "environment": peas.environment,
-    "actuators": peas.actuators,
-    "sensors": peas.sensors,
-    "env_type": peas.env_type
-})
+import json
+json.dumps({"performance": peas.performance_measure, "environment": peas.environment, "actuators": peas.actuators, "sensors": peas.sensors, "env_type": peas.env_type})
 `;
     return runPythonCode(code, { category });
+  },
+
+  async generateMaze(size, density) {
+    const code = `
+from src.problems.maze import generate_maze
+grid, start, goal = generate_maze(size, density)
+import json
+json.dumps({
+    "grid": grid,
+    "start": start,
+    "goal": goal
+})
+`;
+    return runPythonCode(code, { size, density });
   },
   
   async runSearch(algorithm, grid) {
