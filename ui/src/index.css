@@ -20,10 +20,15 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  /* Deep Space animated gradient */
-  background: linear-gradient(135deg, #0f172a 0%, #020617 50%, #1e1b4b 100%);
-  background-size: 200% 200%;
-  animation: gradientBG 15s ease infinite;
+  /* Deep Space animated gradient + High-Tech Grid + Spotlights */
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 35%),
+    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.15), transparent 35%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(135deg, #060913 0%, #020617 50%, #110e30 100%);
+  background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px, 200% 200%;
+  animation: gradientBG 20s ease infinite;
   color: #f8fafc;
 }
 
@@ -43,11 +48,22 @@ body {
 /* Glassmorphism Utilities */
 @layer components {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl transition-all duration-300;
+    @apply bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl transition-all duration-500 relative overflow-hidden;
+  }
+  
+  .glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    z-index: 10;
   }
   
   .glass-panel:hover {
-    @apply bg-white/10 border-white/20 shadow-2xl;
+    @apply bg-slate-900/50 border-white/20 shadow-[0_20px_40px_-15px_rgba(99,102,241,0.3)] -translate-y-1;
   }
 
   .nav-btn {
@@ -131,4 +147,13 @@ input, select {
 }
 input:focus, select:focus {
   border-color: #a855f7;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
 }

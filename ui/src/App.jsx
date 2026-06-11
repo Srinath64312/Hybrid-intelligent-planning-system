@@ -109,15 +109,16 @@ function App() {
               key={tab.id}
               to={tab.path}
               className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-300
+                flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-300 relative overflow-hidden group
                 ${isActive 
-                  ? 'bg-purple-500/15 border border-purple-500/30 text-purple-400 font-semibold shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
-                  : 'border border-transparent text-white/70 hover:bg-white/5 hover:text-white'
+                  ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/50 text-purple-300 font-bold shadow-[0_0_20px_rgba(168,85,247,0.2)]' 
+                  : 'border border-white/5 text-white/60 hover:bg-white/10 hover:border-white/20 hover:text-white'
                 }
               `}
             >
-              <tab.icon size={20} />
-              {tab.label}
+              <div className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+              <tab.icon size={20} className={`relative z-10 ${isActive ? "text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" : "group-hover:text-purple-300 transition-colors"}`} />
+              <span className="relative z-10 tracking-wide">{tab.label}</span>
             </NavLink>
           ))}
         </div>
