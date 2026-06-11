@@ -1,4 +1,46 @@
 export const anthropicClient = {
+  hasKey() {
+    return !!localStorage.getItem('anthropicApiKey');
+  },
+
+  async sendMessage(userPrompt) {
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) throw new Error("Anthropic API key is required.");
+
+    const systemPrompt = `You are a helpful AI algorithm profiling assistant. Explain why one algorithm performed differently than another based on the metrics provided. Be concise, accurate, and educational.`;
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 300,
+          system: systemPrompt,
+          messages: [
+            { role: "user", content: userPrompt }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || `API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.content[0].text;
+    } catch (e) {
+      console.error("Anthropic API Error:", e);
+      throw e;
+    }
+  },
+
   async summarizePlan(apiKey, planData, context) {
     if (!apiKey) {
       throw new Error("Anthropic API key is required.");

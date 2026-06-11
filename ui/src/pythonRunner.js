@@ -132,12 +132,29 @@ json.dumps({
 `;
     return runPythonCode(code, { size, density });
   },
+
+  async analyzeHeuristic(grid, goal, heuristic) {
+    const code = `
+from src.problems.maze import analyze_heuristic
+import json
+
+g_tuple = tuple(goal) if goal else (len(grid)-1, len(grid[0])-1)
+analysis = analyze_heuristic(grid, g_tuple, heuristic)
+
+json.dumps(analysis)
+`;
+    return runPythonCode(code, { grid, goal, heuristic });
+  },
   
-  async runSearch(algorithm, grid) {
+  async runSearch(algorithm, grid, start = null, goal = null, heuristic = "manhattan") {
     const code = `
 from src.problems.maze import MazeProblem
 from src.engines.search_engine import run_search
 from src.core.advisor import generate_advisor_report
+import json
+
+s_tuple = tuple(start) if start else (0, 0)
+g_tuple = tuple(goal) if goal else (len(grid)-1, len(grid[0])-1)
 
 selected_algo = algorithm
 advisor_report = None
@@ -145,22 +162,21 @@ if algorithm == "Auto-Select Best":
     selected_algo = "A*"
     advisor_report = generate_advisor_report("Search")
 
-problem = MazeProblem(grid, (0, 0), (4, 4))
+problem = MazeProblem(grid, s_tuple, g_tuple, heuristic_type=heuristic)
 result = run_search(problem, selected_algo)
 
-res_dict = {
+json.dumps({
     "path": result.path,
     "cost": result.cost,
     "nodes_expanded": result.nodes_expanded,
     "runtime": result.runtime,
-    "trace": result.trace,
     "visited_sequence": result.visited_sequence,
+    "trace": result.trace,
     "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
     "advisor_report": advisor_report
-}
-json.dumps(res_dict)
+})
 `;
-    return runPythonCode(code, { algorithm, grid });
+    return runPythonCode(code, { algorithm, grid, start, goal, heuristic });
   },
   
   async runCsp(n) {
