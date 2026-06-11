@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Play, Pause, Square, FastForward, Calendar, AlertTriangle, CheckCircle, RefreshCw, Info, ChevronDown, ChevronUp, Bot, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
