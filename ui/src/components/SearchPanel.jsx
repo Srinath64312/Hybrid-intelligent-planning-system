@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Play, Pause, Square, FastForward, Settings2, Activity, Shuffle, MousePointer2, Mountain, Flag, MapPin, Scale, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'

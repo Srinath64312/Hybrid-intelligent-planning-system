@@ -116,9 +116,13 @@ function App() {
                 }
               `}
             >
-              <div className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-              <tab.icon size={20} className={`relative z-10 ${isActive ? "text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" : "group-hover:text-purple-300 transition-colors"}`} />
-              <span className="relative z-10 tracking-wide">{tab.label}</span>
+              {({ isActive }) => (
+                <>
+                  <div className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                  <tab.icon size={20} className={`relative z-10 ${isActive ? "text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" : "group-hover:text-purple-300 transition-colors"}`} />
+                  <span className="relative z-10 tracking-wide">{tab.label}</span>
+                </>
+              )}
             </NavLink>
           ))}
         </div>
