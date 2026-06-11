@@ -39,7 +39,11 @@ async function runPythonCode(code, inputs = {}) {
     
     // Clean up globals to prevent memory growth
     for (const key of Object.keys(inputs)) {
-      pyGlobals.delete(`_js_input_${key}`);
+      try {
+        pyGlobals.delete(`_js_input_${key}`);
+      } catch (e) {
+        // Ignore KeyError if another concurrent execution already deleted it
+      }
     }
     
     return JSON.parse(result);
@@ -73,7 +77,8 @@ export const pythonRunner = {
       
       for (const file of filesToLoad) {
         onStatusUpdate(`Loading algorithm: ${file}...`);
-        const fileUrl = `${baseUrl}src_py/${file}`;
+        // Add cache-buster to prevent GitHub Pages from serving stale python scripts
+        const fileUrl = `${baseUrl}src_py/${file}?v=${Date.now()}`;
         const res = await fetch(fileUrl);
         if (!res.ok) {
           throw new Error(`Failed to load ${fileUrl}: ${res.statusText}`);
