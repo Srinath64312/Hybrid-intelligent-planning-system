@@ -27,6 +27,7 @@ export default function CspPanel() {
   const [loading, setLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackIndex, setPlaybackIndex] = useState(0)
+  const [playbackSpeed, setPlaybackSpeed] = useState(200) // ms per step
   const [showDomains, setShowDomains] = useState(true)
   const [showFinalBoard, setShowFinalBoard] = useState(false)
   const [hoveredCell, setHoveredCell] = useState(null)
@@ -36,13 +37,13 @@ export default function CspPanel() {
     if (isPlaying && result && result.visited_sequence && playbackIndex < result.visited_sequence.length) {
       interval = setInterval(() => {
         setPlaybackIndex(prev => prev + 1)
-      }, 500)
+      }, playbackSpeed)
     } else if (playbackIndex >= (result?.visited_sequence?.length || 0)) {
       setIsPlaying(false)
       if (result?.assignment) setShowFinalBoard(true)
     }
     return () => clearInterval(interval)
-  }, [isPlaying, playbackIndex, result])
+  }, [isPlaying, playbackIndex, result, playbackSpeed])
 
   useEffect(() => {
     pythonRunner.getPeas('CSP')
@@ -391,6 +392,27 @@ export default function CspPanel() {
                         initial={{ width: 0 }}
                         animate={{ width: `${(playbackIndex / result.visited_sequence.length) * 100}%` }}
                       />
+                    </div>
+                  )}
+
+                  {!showFinalBoard && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <span className="text-[10px] text-slate-500 shrink-0 font-medium">Speed:</span>
+                      <div className="flex gap-1 flex-1">
+                        {[['1x', 200], ['2x', 100], ['2.5x', 80], ['10x', 20]].map(([label, ms]) => (
+                          <button
+                            key={label}
+                            onClick={() => setPlaybackSpeed(ms)}
+                            className={`flex-1 py-0.5 rounded text-[10px] font-bold transition-all ${
+                              playbackSpeed === ms
+                                ? 'bg-indigo-500 text-white'
+                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </motion.div>

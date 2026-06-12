@@ -559,7 +559,7 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
                 <div className="flex items-center gap-3 pt-1">
                   <span className="text-xs text-slate-500 shrink-0">Speed:</span>
                   <div className="flex gap-1 flex-1">
-                    {[['Slow', 500], ['Normal', 200], ['Fast', 60]].map(([label, ms]) => (
+                    {[['1x', 200], ['2x', 100], ['2.5x', 80], ['10x', 20]].map(([label, ms]) => (
                       <button
                         key={label}
                         onClick={() => setPlaybackSpeed(ms)}
