@@ -351,3 +351,37 @@ input[type="range"]::-webkit-slider-thumb:hover {
 :root.light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(15, 23, 42, 0.25);
 }
+
+/* Light Mode Overrides for buttons and primary colored tags to maintain white text */
+:root.light button.text-white,
+:root.light button .text-white,
+:root.light .btn,
+:root.light button[class*="bg-indigo-"],
+:root.light button[class*="bg-emerald-"],
+:root.light button[class*="bg-red-"],
+:root.light button[class*="bg-blue-"],
+:root.light button[class*="bg-gradient-"],
+:root.light a.nav-btn-active,
+:root.light a.nav-btn-active span {
+  color: #ffffff !important;
+}
+
+/* Additional Light Mode overrides for standard dark backgrounds */
+:root.light .bg-slate-800 { background-color: #f1f5f9 !important; }
+:root.light .bg-slate-900 { background-color: #e2e8f0 !important; }
+:root.light .bg-slate-700 { background-color: #cbd5e1 !important; }
+:root.light .bg-slate-600 { background-color: #cbd5e1 !important; }
+:root.light .bg-black { background-color: #ffffff !important; }
+:root.light .bg-black\/70 { background-color: rgba(255, 255, 255, 0.75) !important; }
+:root.light .bg-indigo-950 { background-color: #e0e7ff !important; }
+:root.light .bg-indigo-900 { background-color: #e0e7ff !important; }
+
+/* Light Mode hover styles to prevent dark mode highlights */
+:root.light .hover\:bg-slate-700:hover { background-color: #cbd5e1 !important; }
+:root.light .hover\:bg-slate-800:hover { background-color: #cbd5e1 !important; }
+:root.light .hover\:bg-slate-900:hover { background-color: #cbd5e1 !important; }
+:root.light .hover\:bg-white\/5:hover { background-color: rgba(15, 23, 42, 0.04) !important; }
+:root.light .hover\:bg-white\/10:hover { background-color: rgba(15, 23, 42, 0.08) !important; }
+:root.light .hover\:text-white:hover { color: #0f172a !important; }
+:root.light .hover\:text-slate-200:hover { color: #1e293b !important; }
+
