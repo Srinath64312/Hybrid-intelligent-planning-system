@@ -236,11 +236,18 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
         result.trace.append("Start state is goal state!")
         return
 
+    # Coordinate check
+    def is_coordinate(s):
+        return isinstance(s, (list, tuple)) and len(s) == 2 and all(isinstance(x, (int, float)) for x in s)
+
     # Forward search
     tb_f = 0
     g_f = {start_state: 0.0}
     parent_f = {start_state: (None, None)}  # state -> (parent_state, action)
-    h_f = lambda s: float(abs(s[0] - goal_state[0]) + abs(s[1] - goal_state[1]))
+    if is_coordinate(start_state):
+        h_f = lambda s: float(abs(s[0] - goal_state[0]) + abs(s[1] - goal_state[1]))
+    else:
+        h_f = lambda s: float(problem.heuristic(s))
     pq_f = [(h_f(start_state), tb_f, start_state)]
     explored_f = set()
 
@@ -248,7 +255,10 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
     tb_b = 0
     g_b = {goal_state: 0.0}
     parent_b = {goal_state: (None, None)}  # state -> (parent_state, action)
-    h_b = lambda s: float(abs(s[0] - start_state[0]) + abs(s[1] - start_state[1]))
+    if is_coordinate(start_state):
+        h_b = lambda s: float(abs(s[0] - start_state[0]) + abs(s[1] - start_state[1]))
+    else:
+        h_b = lambda s: 0.0
     pq_b = [(h_b(goal_state), tb_b, goal_state)]
     explored_b = set()
 
@@ -257,6 +267,16 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
 
     # Opposing action helper for backward path construction
     opposing_actions = {"UP": "DOWN", "DOWN": "UP", "LEFT": "RIGHT", "RIGHT": "LEFT"}
+
+    # Check if we can build a reverse adjacency map
+    reverse_adj = None
+    if hasattr(problem, "adjacency_list") and isinstance(problem.adjacency_list, dict):
+        reverse_adj = {}
+        for parent, neighbors in problem.adjacency_list.items():
+            for child, cost in neighbors:
+                if child not in reverse_adj:
+                    reverse_adj[child] = []
+                reverse_adj[child].append((parent, f"GO_TO_{child}", cost))
 
     while pq_f and pq_b:
         result.max_frontier = max(result.max_frontier, len(pq_f) + len(pq_b))
@@ -276,7 +296,7 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
                     "g": g_f[curr_f],
                     "h": h_f(curr_f)
                 })
-
+ 
                 # Check intersection
                 if curr_f in explored_b:
                     total_cost = g_f[curr_f] + g_b[curr_f]
@@ -284,7 +304,7 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
                         min_total_cost = total_cost
                         intersect_state = curr_f
                         break
-
+ 
                 for next_state, action, step_cost in problem.get_successors(curr_f):
                     new_g = g_f[curr_f] + step_cost
                     if next_state not in g_f or new_g < g_f[next_state]:
@@ -292,7 +312,7 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
                         parent_f[next_state] = (curr_f, action)
                         tb_f += 1
                         heapq.heappush(pq_f, (new_g + h_f(next_state), tb_f, next_state))
-
+ 
         # Step Backward Search
         if pq_b:
             f_score, _, curr_b = heapq.heappop(pq_b)
@@ -308,7 +328,7 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
                     "g": g_b[curr_b],
                     "h": h_b(curr_b)
                 })
-
+ 
                 # Check intersection
                 if curr_b in explored_f:
                     total_cost = g_f[curr_b] + g_b[curr_b]
@@ -316,12 +336,16 @@ def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
                         min_total_cost = total_cost
                         intersect_state = curr_b
                         break
-
-                for next_state, action, step_cost in problem.get_successors(curr_b):
+ 
+                successors = reverse_adj.get(curr_b, []) if reverse_adj is not None else problem.get_successors(curr_b)
+                for next_state, action, step_cost in successors:
                     new_g = g_b[curr_b] + step_cost
                     if next_state not in g_b or new_g < g_b[next_state]:
                         g_b[next_state] = new_g
-                        opp_action = opposing_actions.get(action, action)
+                        if reverse_adj is not None:
+                            opp_action = action
+                        else:
+                            opp_action = opposing_actions.get(action, action)
                         parent_b[next_state] = (curr_b, opp_action)
                         tb_b += 1
                         heapq.heappush(pq_b, (new_g + h_b(next_state), tb_b, next_state))

@@ -40,14 +40,27 @@ def run_search_api():
         selected_algo = "A*"
         advisor_report = generate_advisor_report("Search")
     
-    maze_grid = data.get("grid", [
-        [0, 0, 0, 1, 0],
-        [1, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0]
-    ])
-    problem = MazeProblem(maze_grid, (0, 0), (4, 4))
+    problem_type = data.get("problem_type", "maze")
+    if problem_type == "graph":
+        from src.problems.graph import GraphProblem
+        raw_adj = data.get("adjacency_list", {})
+        adj_list = {}
+        for k, v in raw_adj.items():
+            adj_list[k] = [(item[0], float(item[1])) for item in v]
+        start = data.get("start", "")
+        goal = data.get("goal", "")
+        heuristics = {k: float(v) for k, v in data.get("heuristics", {}).items()}
+        problem = GraphProblem(adj_list, start, goal, heuristics)
+    else:
+        maze_grid = data.get("grid", [
+            [0, 0, 0, 1, 0],
+            [1, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0]
+        ])
+        problem = MazeProblem(maze_grid, (0, 0), (4, 4))
+    
     result = run_search(problem, selected_algo)
     
     return jsonify({

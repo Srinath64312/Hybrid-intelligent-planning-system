@@ -26,28 +26,72 @@ def display_peas(category):
     st.write(f"**Env Type:** {peas.env_type}")
 
 if problem_category == "Search Solver":
-    st.header("Search Engine: Maze Solving")
+    st.header("Search Engine")
     display_peas("Search")
     
-    maze_grid = [
-        [0, 0, 0, 1, 0],
-        [1, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0]
-    ]
-    st.text("Maze Map (0=Path, 1=Wall):")
-    st.text("\n".join(str(row) for row in maze_grid))
-    
+    search_mode = st.selectbox("Select Search Problem Mode", ["Maze Pathfinding", "Custom Graph Search"])
     algo = st.sidebar.selectbox("Algorithm", ["BFS", "DFS", "A*", "Bi-directional A*"])
-    if st.button("Solve Maze"):
-        problem = MazeProblem(maze_grid, (0, 0), (4, 4))
-        result = run_search(problem, algo)
-        st.write(f"**Path Found:** {result.path}")
-        st.write(f"**Cost:** {result.cost}, **Nodes Expanded:** {result.nodes_expanded}")
-        st.write(f"**Runtime:** {result.runtime:.4f}s")
-        with st.expander("Show Trace"):
-            for t in result.trace: st.text(t)
+    
+    if search_mode == "Maze Pathfinding":
+        maze_grid = [
+            [0, 0, 0, 1, 0],
+            [1, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0]
+        ]
+        st.text("Maze Map (0=Path, 1=Wall):")
+        st.text("\n".join(str(row) for row in maze_grid))
+        
+        if st.button("Solve Maze"):
+            problem = MazeProblem(maze_grid, (0, 0), (4, 4))
+            result = run_search(problem, algo)
+            st.write(f"**Path Found:** {result.path}")
+            st.write(f"**Cost:** {result.cost}, **Nodes Expanded:** {result.nodes_expanded}")
+            st.write(f"**Runtime:** {result.runtime:.4f}s")
+            with st.expander("Show Trace"):
+                for t in result.trace: st.text(t)
+    else:
+        st.write("### Define Custom Graph (JSON format)")
+        default_graph = {
+            "adjacency_list": {
+                "A": [["B", 2.0], ["C", 5.0]],
+                "B": [["C", 1.0], ["D", 4.0]],
+                "C": [["D", 2.0]],
+                "D": []
+            },
+            "heuristics": {
+                "A": 4.0,
+                "B": 3.0,
+                "C": 2.0,
+                "D": 0.0
+            },
+            "start": "A",
+            "goal": "D"
+        }
+        import json
+        graph_json = st.text_area("Graph Specification JSON (Editable)", value=json.dumps(default_graph, indent=2), height=250)
+        
+        try:
+            graph_data = json.loads(graph_json)
+            start = graph_data["start"]
+            goal = graph_data["goal"]
+            
+            raw_adj = graph_data["adjacency_list"]
+            adj_list = {k: [(item[0], float(item[1])) for item in v] for k, v in raw_adj.items()}
+            heuristics = {k: float(v) for k, v in graph_data.get("heuristics", {}).items()}
+            
+            if st.button("Solve Custom Graph"):
+                from src.problems.graph import GraphProblem
+                problem = GraphProblem(adj_list, start, goal, heuristics)
+                result = run_search(problem, algo)
+                st.write(f"**Path Found:** {result.path}")
+                st.write(f"**Cost:** {result.cost}, **Nodes Expanded:** {result.nodes_expanded}")
+                st.write(f"**Runtime:** {result.runtime:.4f}s")
+                with st.expander("Show Trace"):
+                    for t in result.trace: st.text(t)
+        except Exception as e:
+            st.error(f"Invalid graph specification: {str(e)}")
 
 elif problem_category == "CSP Solver":
     st.header("CSP Engine Solver")

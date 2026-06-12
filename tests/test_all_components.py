@@ -942,3 +942,35 @@ class TestEdgeCases:
         for region, color in result.assignment.items():
             for neighbor in problem.neighbors[region]:
                 assert result.assignment[neighbor] != color
+
+    def test_custom_graph_search_astar(self):
+        from src.problems.graph import GraphProblem
+        from src.engines.search_engine import run_search
+        adj = {
+            "A": [("B", 1.0), ("C", 4.0)],
+            "B": [("C", 2.0), ("D", 6.0)],
+            "C": [("D", 3.0)],
+            "D": []
+        }
+        h = {"A": 4.0, "B": 3.0, "C": 1.0, "D": 0.0}
+        problem = GraphProblem(adj, "A", "D", h)
+        
+        res_astar = run_search(problem, "A*")
+        assert res_astar.path == ["GO_TO_B", "GO_TO_C", "GO_TO_D"]
+        assert res_astar.cost == 6.0
+
+    def test_custom_graph_search_bidirectional(self):
+        from src.problems.graph import GraphProblem
+        from src.engines.search_engine import run_search
+        adj = {
+            "A": [("B", 1.0), ("C", 4.0)],
+            "B": [("C", 2.0), ("D", 6.0)],
+            "C": [("D", 3.0)],
+            "D": []
+        }
+        h = {"A": 4.0, "B": 3.0, "C": 1.0, "D": 0.0}
+        problem = GraphProblem(adj, "A", "D", h)
+        
+        res_bi = run_search(problem, "Bi-directional A*")
+        assert res_bi.path == ["GO_TO_B", "GO_TO_C", "GO_TO_D"]
+        assert res_bi.cost == 6.0
