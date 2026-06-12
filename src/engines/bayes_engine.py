@@ -22,6 +22,29 @@ class BayesNetwork:
         p_true = node.cpt.get(parent_vals, 0.0)
         return p_true if val else 1.0 - p_true
 
+    def topological_sort(self) -> List[str]:
+        visited = set()
+        temp = set()
+        order = []
+        
+        def visit(node_name: str):
+            if node_name in temp:
+                raise ValueError("Cycle detected in Bayesian Network")
+            if node_name not in visited:
+                temp.add(node_name)
+                node = self.nodes.get(node_name)
+                if node:
+                    for p in node.parents:
+                        visit(p)
+                temp.remove(node_name)
+                visited.add(node_name)
+                order.append(node_name)
+                
+        for name in self.nodes:
+            if name not in visited:
+                visit(name)
+        return order
+
 class BayesResult:
     def __init__(self):
         self.posterior_prob = 0.0
@@ -47,7 +70,7 @@ def run_exact_inference(bn: BayesNetwork, query_var: str, evidence: Dict[str, bo
                 sum_prob += bn.get_prob(first, val, e_copy) * enumerate_all(rest, e_copy)
             return sum_prob
 
-    vars_list = list(bn.nodes.keys())
+    vars_list = bn.topological_sort()
     
     e_true = evidence.copy()
     e_true[query_var] = True
@@ -71,9 +94,12 @@ def run_rejection_sampling(bn: BayesNetwork, query_var: str, evidence: Dict[str,
     result = BayesResult()
     start_time = time.perf_counter()
     
+    topo_order = bn.topological_sort()
+    
     def prior_sample() -> Dict[str, bool]:
         sample = {}
-        for node_name, node in bn.nodes.items():
+        for node_name in topo_order:
+            node = bn.nodes[node_name]
             parent_tuple = tuple(sample[p] for p in node.parents)
             prob_true = node.cpt.get(parent_tuple, 0.0)
             sample[node_name] = random.random() < prob_true
