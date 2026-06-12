@@ -405,7 +405,7 @@ export default function CspPanel() {
                             onClick={() => setPlaybackSpeed(ms)}
                             className={`flex-1 py-0.5 rounded text-[10px] font-bold transition-all ${
                               playbackSpeed === ms
-                                ? 'bg-indigo-500 text-white'
+                                ? 'bg-amber-500 text-slate-900'
                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                             }`}
                           >
