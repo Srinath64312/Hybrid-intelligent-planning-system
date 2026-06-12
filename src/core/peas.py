@@ -42,4 +42,12 @@ def get_peas_analysis(problem_category: str) -> PEAS:
             sensors="Receive evidence observations",
             env_type="Single Agent, Stochastic, Static"
         )
+    elif problem_category == "Timetable":
+        return PEAS(
+            performance_measure="Maximize course schedule coverage, satisfy all hard constraints, minimize backtracks/conflicts",
+            environment="Static, fully observable, discrete assignments",
+            actuators="Schedule course period to (day, period, room) slot",
+            sensors="Detect teacher/room/group conflicts and constraints",
+            env_type="Single Agent, Deterministic, Static"
+        )
     return PEAS("N/A", "N/A", "N/A", "N/A")

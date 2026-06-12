@@ -316,6 +316,25 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
                     animate={{ width: `${(playbackIndex / result.visited_sequence.length) * 100}%` }}
                   />
                 </div>
+                {/* Playback Speed Control */}
+                <div className="flex items-center gap-3 pt-1">
+                  <span className="text-xs text-slate-500 shrink-0">Speed:</span>
+                  <div className="flex gap-1 flex-1">
+                    {[['Slow', 500], ['Normal', 200], ['Fast', 60]].map(([label, ms]) => (
+                      <button
+                        key={label}
+                        onClick={() => setPlaybackSpeed(ms)}
+                        className={`flex-1 py-1 rounded text-xs font-bold transition-all ${
+                          playbackSpeed === ms
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 
                 {/* Live Telemetry Dashboard */}
                 {playbackIndex > 0 && (
@@ -482,9 +501,19 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
                 )
               }))}
             </div>
-            <p className="text-sm text-slate-500 mt-6 text-center">
+            <p className="text-sm text-slate-500 mt-4 text-center">
               Use the draw tools above and click/drag on the grid.<br/>S = Start | G = Goal | Numbers = Travel Cost
             </p>
+            {/* Color Legend */}
+            <div className="flex flex-wrap gap-3 justify-center mt-4 text-[10px] text-slate-400 font-medium">
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-emerald-500 inline-block" />Start (S)</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-rose-500 inline-block" />Goal (G)</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-purple-500 inline-block" />Expanding</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-indigo-500/30 border border-indigo-500/50 inline-block" />Visited</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-400 inline-block" />Optimal Path</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-slate-950 inline-block border border-slate-800" />Wall</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-900/60 inline-block border border-amber-800/80" />Mud (Cost 5)</span>
+            </div>
           </div>
         </div>
 
@@ -535,9 +564,13 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
                     <span className="text-slate-400 text-sm">Path Cost</span>
                     <strong className="block text-3xl text-amber-300 mt-1">{result.cost}</strong>
                   </div>
-                  <div className="bg-black/30 p-4 rounded-xl border border-white/5 col-span-2 flex items-center justify-between">
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <span className="text-slate-400 text-sm">Path Length</span>
+                    <strong className="block text-3xl text-purple-300 mt-1">{result.path ? result.path.length : '—'} steps</strong>
+                  </div>
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                     <span className="text-slate-400 text-sm">Total Runtime</span>
-                    <strong className="text-xl text-emerald-300">{result.runtime.toFixed(4)}s</strong>
+                    <strong className="block text-2xl text-emerald-300 mt-1">{result.runtime.toFixed(4)}s</strong>
                   </div>
                 </div>
               </div>

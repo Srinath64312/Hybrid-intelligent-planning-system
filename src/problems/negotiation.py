@@ -19,13 +19,23 @@ class NegotiationAgent:
         return round(bid, 2)
 
 class MultiAgentNegotiation:
-    def __init__(self):
-        self.agents = [
-            NegotiationAgent("Dr. Newton (Physics)", 1000.0, {"Wed_0900": 800, "Tue_0900": 200}),
-            NegotiationAgent("Dr. Grace (Chemistry)", 1000.0, {"Wed_0900": 600, "Wed_1100": 700}),
-            NegotiationAgent("Dr. Alan (Biology)", 1000.0, {"Tue_0900": 400, "Wed_1100": 800}),
-        ]
-        self.items = ["Tue_0900", "Wed_0900", "Wed_1100"]
+    def __init__(self, agents_data: list = None, items: list = None):
+        if agents_data:
+            self.agents = [
+                NegotiationAgent(a["name"], a["budget"], a["preferences"])
+                for a in agents_data
+            ]
+        else:
+            self.agents = [
+                NegotiationAgent("Dr. Newton (Physics)", 1000.0, {"Wed_0900": 800, "Tue_0900": 200}),
+                NegotiationAgent("Dr. Grace (Chemistry)", 1000.0, {"Wed_0900": 600, "Wed_1100": 700}),
+                NegotiationAgent("Dr. Alan (Biology)", 1000.0, {"Tue_0900": 400, "Wed_1100": 800}),
+            ]
+        
+        if items:
+            self.items = items
+        else:
+            self.items = ["Tue_0900", "Wed_0900", "Wed_1100"]
         self.trace = []
         
     def run_auction(self):

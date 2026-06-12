@@ -28,6 +28,8 @@ def run_search(problem: SearchProblem, algorithm: str) -> SearchResult:
         _ucs(problem, result)
     elif algorithm == "Greedy":
         _greedy_best_first(problem, result)
+    elif algorithm == "Bi-directional A*":
+        _bidirectional_a_star(problem, result)
     else:
         raise ValueError(f"Unknown algorithm: {algorithm}")
         
@@ -220,3 +222,129 @@ def _greedy_best_first(problem: SearchProblem, result: SearchResult):
                 g_new = g_cost + step_cost
                 tie_breaker += 1
                 heapq.heappush(pq, (h_new, tie_breaker, next_state, path + [action], g_new))
+
+def _bidirectional_a_star(problem: SearchProblem, result: SearchResult):
+    start_state = problem.get_initial_state()
+    if not hasattr(problem, "goal"):
+        # If no goal attribute exists, run standard A* as fallback
+        return _a_star(problem, result)
+        
+    goal_state = problem.goal
+    if start_state == goal_state:
+        result.path = []
+        result.cost = 0.0
+        result.trace.append("Start state is goal state!")
+        return
+
+    # Forward search
+    tb_f = 0
+    g_f = {start_state: 0.0}
+    parent_f = {start_state: (None, None)}  # state -> (parent_state, action)
+    h_f = lambda s: float(abs(s[0] - goal_state[0]) + abs(s[1] - goal_state[1]))
+    pq_f = [(h_f(start_state), tb_f, start_state)]
+    explored_f = set()
+
+    # Backward search
+    tb_b = 0
+    g_b = {goal_state: 0.0}
+    parent_b = {goal_state: (None, None)}  # state -> (parent_state, action)
+    h_b = lambda s: float(abs(s[0] - start_state[0]) + abs(s[1] - start_state[1]))
+    pq_b = [(h_b(goal_state), tb_b, goal_state)]
+    explored_b = set()
+
+    intersect_state = None
+    min_total_cost = float('inf')
+
+    # Opposing action helper for backward path construction
+    opposing_actions = {"UP": "DOWN", "DOWN": "UP", "LEFT": "RIGHT", "RIGHT": "LEFT"}
+
+    while pq_f and pq_b:
+        result.max_frontier = max(result.max_frontier, len(pq_f) + len(pq_b))
+        
+        # Step Forward Search
+        if pq_f:
+            f_score, _, curr_f = heapq.heappop(pq_f)
+            if curr_f not in explored_f:
+                explored_f.add(curr_f)
+                result.nodes_expanded += 1
+                result.trace.append(f"[Forward] Expanded: {curr_f} (f={f_score:.2f})")
+                
+                result.visited_sequence.append({
+                    "state": curr_f,
+                    "frontier_size": len(pq_f) + len(pq_b),
+                    "closed_size": len(explored_f) + len(explored_b),
+                    "g": g_f[curr_f],
+                    "h": h_f(curr_f)
+                })
+
+                # Check intersection
+                if curr_f in explored_b:
+                    total_cost = g_f[curr_f] + g_b[curr_f]
+                    if total_cost < min_total_cost:
+                        min_total_cost = total_cost
+                        intersect_state = curr_f
+                        break
+
+                for next_state, action, step_cost in problem.get_successors(curr_f):
+                    new_g = g_f[curr_f] + step_cost
+                    if next_state not in g_f or new_g < g_f[next_state]:
+                        g_f[next_state] = new_g
+                        parent_f[next_state] = (curr_f, action)
+                        tb_f += 1
+                        heapq.heappush(pq_f, (new_g + h_f(next_state), tb_f, next_state))
+
+        # Step Backward Search
+        if pq_b:
+            f_score, _, curr_b = heapq.heappop(pq_b)
+            if curr_b not in explored_b:
+                explored_b.add(curr_b)
+                result.nodes_expanded += 1
+                result.trace.append(f"[Backward] Expanded: {curr_b} (f={f_score:.2f})")
+                
+                result.visited_sequence.append({
+                    "state": curr_b,
+                    "frontier_size": len(pq_f) + len(pq_b),
+                    "closed_size": len(explored_f) + len(explored_b),
+                    "g": g_b[curr_b],
+                    "h": h_b(curr_b)
+                })
+
+                # Check intersection
+                if curr_b in explored_f:
+                    total_cost = g_f[curr_b] + g_b[curr_b]
+                    if total_cost < min_total_cost:
+                        min_total_cost = total_cost
+                        intersect_state = curr_b
+                        break
+
+                for next_state, action, step_cost in problem.get_successors(curr_b):
+                    new_g = g_b[curr_b] + step_cost
+                    if next_state not in g_b or new_g < g_b[next_state]:
+                        g_b[next_state] = new_g
+                        opp_action = opposing_actions.get(action, action)
+                        parent_b[next_state] = (curr_b, opp_action)
+                        tb_b += 1
+                        heapq.heappush(pq_b, (new_g + h_b(next_state), tb_b, next_state))
+
+    if intersect_state is not None:
+        # Reconstruct path
+        path_f = []
+        curr = intersect_state
+        while curr != start_state:
+            parent_state, action = parent_f[curr]
+            path_f.append(action)
+            curr = parent_state
+        path_f.reverse()
+
+        path_b = []
+        curr = intersect_state
+        while curr != goal_state:
+            child_state, action = parent_b[curr]
+            path_b.append(action)
+            curr = child_state
+
+        result.path = path_f + path_b
+        result.cost = min_total_cost
+        result.trace.append(f"Intersection found at {intersect_state}! Reconstructed path.")
+    else:
+        result.trace.append("No path found.")

@@ -1,3 +1,4 @@
 flask
 flask-cors
 pytest==8.1.1
+fpdf2

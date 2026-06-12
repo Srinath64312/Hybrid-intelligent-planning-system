@@ -98,3 +98,113 @@ def run_rejection_sampling(bn: BayesNetwork, query_var: str, evidence: Dict[str,
         
     result.runtime = time.perf_counter() - start_time
     return result
+
+@dataclass
+class DecisionNetworkNode:
+    name: str
+    node_type: str  # "chance", "decision", "utility"
+    parents: List[str]
+    cpt_or_utility: Dict[Tuple[bool, ...], float]
+
+class DecisionNetwork:
+    def __init__(self):
+        self.nodes: Dict[str, DecisionNetworkNode] = {}
+        
+    def add_chance_node(self, name: str, parents: List[str], cpt: Dict[Tuple[bool, ...], float]):
+        self.nodes[name] = DecisionNetworkNode(name, "chance", parents, cpt)
+        
+    def add_decision_node(self, name: str):
+        self.nodes[name] = DecisionNetworkNode(name, "decision", [], {})
+        
+    def add_utility_node(self, name: str, parents: List[str], utility_table: Dict[Tuple[bool, ...], float]):
+        self.nodes[name] = DecisionNetworkNode(name, "utility", parents, utility_table)
+
+def run_decision_inference(dn: DecisionNetwork, evidence: Dict[str, bool]) -> Dict[str, Any]:
+    decisions = [n.name for n in dn.nodes.values() if n.node_type == "decision"]
+    utilities = [n for n in dn.nodes.values() if n.node_type == "utility"]
+    
+    if not utilities:
+        return {"error": "No utility node defined in decision network"}
+    u_node = utilities[0]
+    
+    # Build a BayesNetwork dynamically to query probabilities
+    bn = BayesNetwork()
+    for node in dn.nodes.values():
+        if node.node_type == "chance":
+            bn.add_node(node.name, node.parents, node.cpt_or_utility)
+        elif node.node_type == "decision":
+            bn.add_node(node.name, [], {(): 0.5})
+
+    import itertools
+    u_parents = u_node.parents
+    parent_settings = list(itertools.product([True, False], repeat=len(u_parents)))
+    
+    decision_name = decisions[0]
+    results = {}
+    trace = []
+    
+    best_decision = None
+    best_eu = -float('inf')
+    
+    for d_val in [True, False]:
+        eu = 0.0
+        d_evidence = evidence.copy()
+        d_evidence[decision_name] = d_val
+        
+        trace.append(f"Evaluating Decision: {decision_name} = {d_val}")
+        
+        for setting in parent_settings:
+            setting_dict = dict(zip(u_parents, setting))
+            
+            consistent = True
+            for k, v in setting_dict.items():
+                if k in d_evidence and d_evidence[k] != v:
+                    consistent = False
+                    break
+            if not consistent:
+                continue
+                
+            def get_joint_prob(env: Dict[str, bool]) -> float:
+                vars_list = list(bn.nodes.keys())
+                
+                def enumerate_all_vars(vl: List[str], e: Dict[str, bool]) -> float:
+                    if not vl:
+                        return 1.0
+                    first = vl[0]
+                    rest = vl[1:]
+                    if first in e:
+                        return bn.get_prob(first, e[first], e) * enumerate_all_vars(rest, e)
+                    else:
+                        sum_p = 0.0
+                        for val in [True, False]:
+                            e_copy = e.copy()
+                            e_copy[first] = val
+                            sum_p += bn.get_prob(first, val, e_copy) * enumerate_all_vars(rest, e_copy)
+                        return sum_p
+                return enumerate_all_vars(vars_list, env)
+            
+            p_joint = get_joint_prob(joint_env := {**d_evidence, **setting_dict})
+            p_denom = get_joint_prob(d_evidence)
+            
+            p_cond = p_joint / p_denom if p_denom > 0 else 0.0
+            
+            utility_val = u_node.cpt_or_utility.get(setting, 0.0)
+            eu += p_cond * utility_val
+            
+            setting_str = ", ".join(f"{k}={v}" for k, v in setting_dict.items())
+            trace.append(f"  P({setting_str} | {decision_name}={d_val}, evidence) = {p_cond:.4f} (Utility: {utility_val})")
+            
+        trace.append(f"Expected Utility for {decision_name}={d_val}: {eu:.2f}\n")
+        results[d_val] = eu
+        if eu > best_eu:
+            best_eu = eu
+            best_decision = d_val
+            
+    trace.append(f"Recommended Action: {decision_name} = {best_decision} (Max EU = {best_eu:.2f})")
+    
+    return {
+        "results": {str(k): v for k, v in results.items()},
+        "best_decision": best_decision,
+        "best_eu": best_eu,
+        "trace": trace
+    }

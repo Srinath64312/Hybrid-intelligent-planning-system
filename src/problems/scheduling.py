@@ -9,7 +9,7 @@ class SchedulingProblem(CSPProblem[str, Tuple[str, str]]):
         variables = ["BIO101", "CHEM101", "PHYS101"]
         
         # Timeslots and Rooms
-        slots = ["Wednesday_0900", "Wednesday_1100", "Tuesday_0900"]
+        slots = ["Wednesday_0900", "Wednesday_1100", "Wednesday_1300", "Tuesday_0900"]
         rooms = ["Lab_A_Wet", "Lecture_Hall_102"]
         
         # Set up domains dynamically based on basic eligibility constraints
@@ -26,6 +26,9 @@ class SchedulingProblem(CSPProblem[str, Tuple[str, str]]):
                         continue
                     # Soft Constraint: Dr. Newton (PHYS101) only teaches Wednesday (unless relaxed)
                     if var == "PHYS101" and not relax_newton and s == "Tuesday_0900":
+                        continue
+                    # Hard Constraint: Wet Lab is not available at Wednesday_1300
+                    if r == "Lab_A_Wet" and s == "Wednesday_1300":
                         continue
                     var_domain.append((s, r))
             domains[var] = var_domain

@@ -1,6 +1,6 @@
 import time
 import random
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from src.core.problem import CSPProblem
 
 class CSPResult:

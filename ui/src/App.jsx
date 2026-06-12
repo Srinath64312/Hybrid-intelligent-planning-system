@@ -10,6 +10,7 @@ import BayesPanel from './components/BayesPanel'
 import AdvisorPanel from './components/AdvisorPanel'
 import HomePanel from './components/HomePanel'
 import SchedulePanel from './components/SchedulePanel'
+import TimetablePanel from './components/TimetablePanel'
 import './index.css'
 
 function App() {
@@ -38,7 +39,8 @@ function App() {
     { id: 'game', path: '/game', icon: Gamepad2, label: 'Game AI (Tic-Tac-Toe)' },
     { id: 'bayes', path: '/bayes', icon: Activity, label: 'Probabilistic (Diagnosis)' },
     { id: 'advisor', path: '/advisor', icon: Lightbulb, label: 'Advisor (Expert Systems)' },
-    { id: 'schedule', path: '/schedule', icon: CalendarDays, label: 'Scheduling CSP' }
+    { id: 'schedule', path: '/schedule', icon: CalendarDays, label: 'Scheduling CSP' },
+    { id: 'timetable', path: '/timetable', icon: CalendarDays, label: 'Timetable Generator' }
   ]
 
   if (pyStatus !== 'ready') {
@@ -141,6 +143,7 @@ function App() {
               <Route path="/bayes" element={<BayesPanel />} />
               <Route path="/advisor" element={<AdvisorPanel />} />
               <Route path="/schedule" element={<SchedulePanel />} />
+              <Route path="/timetable" element={<TimetablePanel />} />
             </Routes>
           </AnimatePresence>
         </div>

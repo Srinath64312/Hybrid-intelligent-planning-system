@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Play, Pause, Square, FastForward, Calendar, AlertTriangle, CheckCircle, RefreshCw, Info, ChevronDown, ChevronUp, Bot, Eye, EyeOff } from 'lucide-react'
+import { Play, Pause, Square, FastForward, Calendar, AlertTriangle, CheckCircle, RefreshCw, Info, ChevronDown, ChevronUp, Bot, Eye, EyeOff, BookOpen, Lock, Unlock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
 import { anthropicClient } from '../anthropicClient'
@@ -12,6 +12,7 @@ export default function SchedulePanel() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackIndex, setPlaybackIndex] = useState(0)
   const [showDomains, setShowDomains] = useState(true)
+  const [showScenario, setShowScenario] = useState(true)
   
   useEffect(() => {
     let interval;
@@ -101,7 +102,8 @@ export default function SchedulePanel() {
   const timeslots = [
     { id: "Tuesday_0900", label: "Tue 9:00 AM" },
     { id: "Wednesday_0900", label: "Wed 9:00 AM" },
-    { id: "Wednesday_1100", label: "Wed 11:00 AM" }
+    { id: "Wednesday_1100", label: "Wed 11:00 AM" },
+    { id: "Wednesday_1300", label: "Wed 1:00 PM" }
   ]
 
   const rooms = [
@@ -176,6 +178,55 @@ export default function SchedulePanel() {
           <p className="m-0 text-slate-400 mt-1">Solve the course scheduling conflict using Constraint Satisfaction</p>
         </div>
       </div>
+
+      {/* Scenario Context Banner */}
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="glass-panel border-indigo-500/20 bg-gradient-to-r from-indigo-950/30 to-purple-950/20 overflow-hidden"
+        >
+          <button
+            onClick={() => setShowScenario(!showScenario)}
+            className="w-full p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen size={18} className="text-indigo-400 shrink-0" />
+              <span className="text-sm font-bold text-indigo-300">Scheduling Scenario: University Conflict CSP</span>
+            </div>
+            {showScenario ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+          </button>
+          <AnimatePresence>
+            {showScenario && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                className="px-5 pb-5 border-t border-white/5"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  {[
+                    { course: 'BIO101', prof: 'Dr. Alan', color: 'bg-purple-500', constraints: ['🔒 Requires Lab_A_Wet', '🔒 Wet Lab: Wed only'] },
+                    { course: 'CHEM101', prof: 'Dr. Grace', color: 'bg-pink-500', constraints: ['🔒 Requires Lab_A_Wet', '🔒 Wet Lab: Wed only'] },
+                    { course: 'PHYS101', prof: 'Dr. Newton', color: 'bg-blue-500', constraints: ['🔓 Wed only (relaxable)', '👥 No overlap w/ cohort'] },
+                  ].map(({ course, prof, color, constraints }) => (
+                    <div key={course} className="bg-black/30 rounded-xl p-3 border border-white/5">
+                      <div className={`${color} text-white text-xs font-black px-2 py-0.5 rounded mb-2 inline-block`}>{course}</div>
+                      <div className="text-xs text-slate-400 mb-1">{prof}</div>
+                      {constraints.map(c => (
+                        <div key={c} className="text-[10px] text-slate-500 mt-1">{c}</div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 text-xs text-slate-500 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                  <strong className="text-slate-400">Problem:</strong> Three courses must be scheduled without conflicts.
+                  BIO101 &amp; CHEM101 need Lab_A_Wet (available Wed 9AM &amp; 11AM only). PHYS101 with Dr. Newton
+                  needs its own timeslot — the solver uses <strong className="text-indigo-400">Wed 1:00 PM → Lecture Hall 102</strong> (added to make the default case feasible).
+                  Toggle the relaxations below to explore infeasible constraint combinations!
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Left Column */}
@@ -372,8 +423,18 @@ export default function SchedulePanel() {
                   <div>
                     <h3 className="m-0 mb-1 text-emerald-400 text-xl font-bold">Valid Schedule Found!</h3>
                     <p className="m-0 text-slate-300 text-sm leading-relaxed">
-                      The solver successfully satisfied all core constraints and applied relaxations.
+                      All {relaxNewton ? 1 : 0 + relaxCohort ? 1 : 0} soft constraints relaxed · Backtracking solver found a conflict-free assignment satisfying all hard constraints.
                     </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✅ Room Overlap: Resolved</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✅ Wet Lab: Satisfied</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${relaxNewton ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                        {relaxNewton ? '✅ Newton: Relaxed' : '⚖️ Newton: Wed only'}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${relaxCohort ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30'}`}>
+                        {relaxCohort ? '✅ Cohort: Relaxed' : '⚖️ Cohort: No overlap'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -382,8 +443,12 @@ export default function SchedulePanel() {
                   <div>
                     <h3 className="m-0 mb-1 text-red-400 text-xl font-bold">Deadlock Encountered</h3>
                     <p className="m-0 text-slate-300 text-sm leading-relaxed mb-3">
-                      No valid schedule exists. The solver exhausted all possibilities due to conflicting hard constraints.
+                      No valid schedule exists with current constraints. The solver exhausted all possibilities.
                     </p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">❌ Timeslot Conflict</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">💡 Try: Relax Newton's Availability</span>
+                    </div>
                   </div>
                 </div>
               )}

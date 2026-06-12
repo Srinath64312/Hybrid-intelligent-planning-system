@@ -11,7 +11,9 @@ const filesToLoad = [
   'problems/tictactoe.py',
   'problems/diagnosis.py',
   'problems/scheduling.py',
-  'problems/negotiation.py'
+  'problems/negotiation.py',
+  'problems/timetable.py',
+  'engines/timetable_engine.py'
 ];
 
 let pyodideInstance = null;
@@ -358,5 +360,74 @@ import json
 json.dumps(result)
 `;
     return runPythonCode(code, {});
+  },
+
+  async runTimetable(courses, teachers, rooms, groups, config) {
+    const code = `
+from src.problems.timetable import TimetableProblem
+from src.engines.timetable_engine import run_timetable
+import json
+
+problem = TimetableProblem(
+    courses=courses,
+    teachers=teachers,
+    rooms=rooms,
+    groups=groups,
+    periods_per_day=int(config["periods_per_day"]),
+    days_per_week=int(config["days_per_week"])
+)
+
+result = run_timetable(problem, config["solver"])
+
+# Serialize assignment
+assignment = result.assignment if result.solved else result.partial_assignment
+serialized_assignment = {}
+if assignment:
+    for (cname, pidx), val in assignment.items():
+        serialized_assignment[f"{cname}_{pidx}"] = list(val)
+
+# Generate structured timetables per group and per teacher
+group_timetables = {g["name"]: [[None for _ in range(int(config["periods_per_day"]))] for _ in range(int(config["days_per_week"]))] for g in groups}
+teacher_timetables = {t["name"]: [[None for _ in range(int(config["periods_per_day"]))] for _ in range(int(config["days_per_week"]))] for t in teachers}
+
+if assignment:
+    for (cname, pidx), val in assignment.items():
+        day, period, room = val
+        c_info = problem.course_map[cname]
+        tname = c_info.get("teacher")
+        c_groups = problem.course_groups.get(cname, [])
+        
+        # Add to group grids
+        for g in c_groups:
+            if g in group_timetables:
+                group_timetables[g][day][period] = {
+                    "course": cname,
+                    "teacher": tname,
+                    "room": room
+                }
+        # Add to teacher grid
+        if tname in teacher_timetables:
+            teacher_timetables[tname][day][period] = {
+                "course": cname,
+                "groups": c_groups,
+                "room": room
+            }
+
+res_dict = {
+    "solved": result.solved,
+    "assignment": serialized_assignment,
+    "group_timetables": group_timetables,
+    "teacher_timetables": teacher_timetables,
+    "assignments_tried": result.assignments_tried,
+    "backtracks": result.backtracks if config["solver"] == "Backtracking (MRV+FC)" else result.iterations,
+    "runtime": result.runtime,
+    "trace": result.trace[-100:],
+    "unscheduled": result.unscheduled,
+    "visited_sequence": result.visited_sequence,
+    "explainability_reports": result.explainability_reports
+}
+json.dumps(res_dict)
+`;
+    return runPythonCode(code, { courses, teachers, rooms, groups, config });
   }
 };
