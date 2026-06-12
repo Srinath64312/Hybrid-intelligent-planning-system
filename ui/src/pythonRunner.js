@@ -239,11 +239,13 @@ json.dumps(res_dict)
     return runPythonCode(code, { n, algorithm });
   },
   
-  async runGame(algorithm, boardState, depthLimit = 3) {
+  async runGame(algorithm, boardState, difficulty = 'hard') {
+    const depthLimit = difficulty === 'hard' ? 9 : 2;
     const code = `
 from src.problems.tictactoe import TicTacToeProblem, TicTacToeState
 from src.engines.game_engine import run_minimax
 from src.core.advisor import generate_advisor_report
+import random
 
 selected_algo = algorithm
 advisor_report = None
@@ -265,6 +267,16 @@ else:
     state = problem.get_initial_state()
     
 is_terminal = problem.is_terminal(state)
+
+def prune_tree(node, max_depth, current_depth=0):
+    if not node:
+        return None
+    if current_depth >= max_depth:
+        node["children"] = []
+        return node
+    node["children"] = [prune_tree(child, max_depth, current_depth + 1) for child in node.get("children", [])]
+    return node
+
 if is_terminal:
     res_dict = {
         "best_action": None,
@@ -292,6 +304,16 @@ if is_terminal:
     }
 else:
     result = run_minimax(problem, state, depthLimit, use_alpha_beta)
+    
+    # Friendly mode: 35% chance to make a random legal move instead of optimal minimax move
+    if difficulty == "friendly" and not is_terminal:
+        actions = problem.get_possible_actions(state)
+        if actions and random.random() < 0.35:
+            result.best_action = random.choice(actions)
+            next_state_rand = problem.get_next_state(state, result.best_action)
+            result.expected_utility = problem.evaluate(next_state_rand) if problem.is_terminal(next_state_rand) else 0.0
+            result.trace.append("Friendly Mode: AI made a random sub-optimal move.")
+            
     next_state = problem.get_next_state(state, result.best_action) if result.best_action else state
     is_term_next = problem.is_terminal(next_state)
     util_next = problem.evaluate(next_state) if is_term_next else None
@@ -309,12 +331,12 @@ else:
         "winning_line": winning_line,
         "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
         "advisor_report": advisor_report,
-        "evaluation_tree": result.evaluation_tree
+        "evaluation_tree": prune_tree(result.evaluation_tree, 3)
     }
 import json
 json.dumps(res_dict)
 `;
-    return runPythonCode(code, { algorithm, boardState, depthLimit });
+    return runPythonCode(code, { algorithm, boardState, difficulty, depthLimit });
   },
   
   async runBayes(method, queryVar, evidence, customCpts, numSamples = 5000) {

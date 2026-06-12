@@ -38,6 +38,12 @@ function flattenTree(node, nodes = [], links = []) {
   return { nodes, links };
 }
 
+function getTreeDepth(node) {
+  if (!node) return 0;
+  if (!node.children || node.children.length === 0) return 1;
+  return 1 + Math.max(...node.children.map(getTreeDepth));
+}
+
 export default function GamePanel() {
   const [peas, setPeas] = useState(null)
   const [mode, setMode] = useState('Tic-Tac-Toe') // 'Tic-Tac-Toe' or 'Negotiation'
@@ -51,7 +57,7 @@ export default function GamePanel() {
     [null, null, null],
     [null, null, null]
   ])
-  const [depthLimit, setDepthLimit] = useState(3)
+  const [difficulty, setDifficulty] = useState('hard')
   const [hoveredNode, setHoveredNode] = useState(null)
 
   // Negotiation State
@@ -74,7 +80,7 @@ export default function GamePanel() {
   const makeAIMove = async (currentBoard) => {
     setLoading(true)
     try {
-      const data = await pythonRunner.runGame(algorithm, currentBoard, depthLimit)
+      const data = await pythonRunner.runGame(algorithm, currentBoard, difficulty)
       setResult(data)
       if (data.best_action && !data.is_terminal && data.expected_utility !== undefined) {
         const [r, c] = data.best_action
@@ -167,13 +173,24 @@ export default function GamePanel() {
                   </select>
                 </div>
                 
-                <div className="flex flex-col gap-2 w-48">
-                  <label className="text-sm font-medium text-slate-400">Search Depth: {depthLimit}</label>
-                  <input 
-                    type="range" min="1" max="4" value={depthLimit} 
-                    onChange={e => setDepthLimit(parseInt(e.target.value))}
-                    className="w-full accent-rose-500 bg-slate-800 h-2 rounded-lg cursor-pointer"
-                  />
+                <div className="flex flex-col gap-2 min-w-[200px]">
+                  <label className="text-sm font-medium text-slate-400">Difficulty Mode</label>
+                  <div className="bg-black/40 p-1 rounded-lg flex border border-slate-700">
+                    <button 
+                      type="button"
+                      onClick={() => setDifficulty('friendly')}
+                      className={`flex-1 py-1.5 rounded text-xs font-bold transition-all cursor-pointer ${difficulty === 'friendly' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      Friendly
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setDifficulty('hard')}
+                      className={`flex-1 py-1.5 rounded text-xs font-bold transition-all cursor-pointer ${difficulty === 'hard' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      Unbeatable (Hard)
+                    </button>
+                  </div>
                 </div>
                 
                 <button 
@@ -306,8 +323,9 @@ export default function GamePanel() {
                     const context = { leafCount: 0 };
                     const laidOut = layoutTree(result.evaluation_tree, 0, context);
                     const { nodes, links } = flattenTree(laidOut);
+                    const treeDepth = getTreeDepth(laidOut);
                     const svgWidth = Math.max(800, context.leafCount * 85 + 100);
-                    const svgHeight = 4 * 110 + 100; // depth * levelHeight + padding
+                    const svgHeight = Math.max(300, treeDepth * 110 + 100); // dynamic depth height
                     
                     return (
                       <svg width={svgWidth} height={svgHeight} className="overflow-visible select-none">
