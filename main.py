@@ -48,6 +48,17 @@ def main():
         print(f"Runtime: {result.runtime:.4f}s")
         print(f"Final Assignment: {result.assignment}")
         
+        print("\n" + "="*40)
+        print("[HIPS] Starting CSP Engine: Australia Map Coloring")
+        from src.problems.map_coloring import build_australian_map_coloring
+        problem_map = build_australian_map_coloring()
+        result_map = run_csp(problem_map)
+        print("--- Final Metrics ---")
+        print(f"Assignments Tried: {result_map.assignments_tried}")
+        print(f"Backtracks: {result_map.backtracks}")
+        print(f"Runtime: {result_map.runtime:.4f}s")
+        print(f"Final Assignment: {result_map.assignment}")
+        
     elif args.problem == "game":
         print("[HIPS] Starting Game Engine: Tic-Tac-Toe")
         problem = TicTacToeProblem()

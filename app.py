@@ -50,20 +50,36 @@ if problem_category == "Search Solver":
             for t in result.trace: st.text(t)
 
 elif problem_category == "CSP Solver":
-    st.header("CSP Engine: N-Queens")
+    st.header("CSP Engine Solver")
     display_peas("CSP")
-    n = st.number_input("N (Board Size)", min_value=4, max_value=12, value=8)
     
-    if st.button("Solve N-Queens"):
-        problem = NQueensProblem(n)
-        result = run_csp(problem)
-        st.write(f"**Assignments Tried:** {result.assignments_tried}")
-        st.write(f"**Backtracks:** {result.backtracks}")
-        st.write(f"**Runtime:** {result.runtime:.4f}s")
-        st.write("**Final Assignment (Row -> Col):**")
-        st.json(result.assignment)
-        with st.expander("Show Trace"):
-            for t in result.trace: st.text(t)
+    csp_choice = st.selectbox("Select CSP Example", ["N-Queens", "Map Coloring (Australia)"])
+    
+    if csp_choice == "N-Queens":
+        n = st.number_input("N (Board Size)", min_value=4, max_value=12, value=8)
+        if st.button("Solve N-Queens"):
+            problem = NQueensProblem(n)
+            result = run_csp(problem)
+            st.write(f"**Assignments Tried:** {result.assignments_tried}")
+            st.write(f"**Backtracks:** {result.backtracks}")
+            st.write(f"**Runtime:** {result.runtime:.4f}s")
+            st.write("**Final Assignment (Row -> Col):**")
+            st.json(result.assignment)
+            with st.expander("Show Trace"):
+                for t in result.trace: st.text(t)
+    else:
+        st.write("Color regional nodes (WA, NT, SA, Q, NSW, V, T) using Red, Green, and Blue such that no adjacent regions share a color.")
+        from src.problems.map_coloring import build_australian_map_coloring
+        if st.button("Solve Map Coloring"):
+            problem = build_australian_map_coloring()
+            result = run_csp(problem)
+            st.write(f"**Assignments Tried:** {result.assignments_tried}")
+            st.write(f"**Backtracks:** {result.backtracks}")
+            st.write(f"**Runtime:** {result.runtime:.4f}s")
+            st.write("**Final Coloring Assignments:**")
+            st.json(result.assignment)
+            with st.expander("Show Trace"):
+                for t in result.trace: st.text(t)
 
 elif problem_category == "Game AI":
     st.header("Game Engine: Tic-Tac-Toe (AI vs AI)")

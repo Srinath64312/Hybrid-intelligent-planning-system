@@ -64,9 +64,15 @@ def run_search_api():
 @app.route("/api/csp", methods=["POST"])
 def run_csp_api():
     data = request.json or {}
-    n = data.get("n", 8)
+    problem_type = data.get("problem_type", "nqueens")
     
-    problem = NQueensProblem(n)
+    if problem_type == "map_coloring":
+        from src.problems.map_coloring import build_australian_map_coloring
+        problem = build_australian_map_coloring()
+    else:
+        n = data.get("n", 8)
+        problem = NQueensProblem(n)
+        
     result = run_csp(problem)
     
     return jsonify({

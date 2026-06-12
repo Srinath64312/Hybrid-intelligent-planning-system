@@ -930,3 +930,15 @@ class TestEdgeCases:
         assert res["allocations"]["Slot1"] == "Prof A"
         assert res["final_budgets"]["Prof A"] < 500.0
         assert res["final_budgets"]["Prof B"] == 300.0
+
+    def test_map_coloring_solves(self):
+        from src.problems.map_coloring import build_australian_map_coloring
+        from src.engines.csp_engine import run_csp
+        problem = build_australian_map_coloring()
+        result = run_csp(problem)
+        assert result.assignment is not None
+        assert len(result.assignment) == 7
+        # Verify no adjacent region has the same color
+        for region, color in result.assignment.items():
+            for neighbor in problem.neighbors[region]:
+                assert result.assignment[neighbor] != color
