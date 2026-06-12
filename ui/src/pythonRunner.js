@@ -13,7 +13,8 @@ const filesToLoad = [
   'problems/scheduling.py',
   'problems/negotiation.py',
   'problems/timetable.py',
-  'engines/timetable_engine.py'
+  'engines/timetable_engine.py',
+  'problems/graph.py'
 ];
 
 let pyodideInstance = null;
@@ -179,6 +180,36 @@ json.dumps({
 })
 `;
     return runPythonCode(code, { algorithm, grid, start, goal, heuristic });
+  },
+
+  async runGraphSearch(algorithm, adjacencyList, startNode, goalNode, heuristics = null) {
+    const code = `
+from src.problems.graph import GraphProblem
+from src.engines.search_engine import run_search
+from src.core.advisor import generate_advisor_report
+import json
+
+selected_algo = algorithm
+advisor_report = None
+if algorithm == "Auto-Select Best":
+    selected_algo = "A*"
+    advisor_report = generate_advisor_report("Search")
+
+problem = GraphProblem(adjacency_list, start, goal, heuristics=heuristics)
+result = run_search(problem, selected_algo)
+
+json.dumps({
+    "path": result.path,
+    "cost": result.cost,
+    "nodes_expanded": result.nodes_expanded,
+    "runtime": result.runtime,
+    "visited_sequence": result.visited_sequence,
+    "trace": result.trace,
+    "auto_selected": selected_algo if algorithm == "Auto-Select Best" else None,
+    "advisor_report": advisor_report
+})
+`;
+    return runPythonCode(code, { algorithm, adjacency_list: adjacencyList, start: startNode, goal: goalNode, heuristics });
   },
   
   async runCsp(n, algorithm = "Backtracking (MRV+FC)") {

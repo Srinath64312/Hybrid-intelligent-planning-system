@@ -5,6 +5,25 @@ import { pythonRunner } from '../pythonRunner'
 import { anthropicClient } from '../anthropicClient'
 
 export default function SearchPanel() {
+  const [searchMode, setSearchMode] = useState('maze') // maze, graph
+  const [graphJson, setGraphJson] = useState(JSON.stringify({
+    adjacency_list: {
+      "A": [["B", 1.0], ["C", 4.0]],
+      "B": [["C", 2.0], ["D", 6.0]],
+      "C": [["D", 3.0]],
+      "D": []
+    },
+    heuristics: {
+      "A": 4.0,
+      "B": 3.0,
+      "C": 1.0,
+      "D": 0.0
+    },
+    start: "A",
+    goal: "D"
+  }, null, 2))
+  const [graphError, setGraphError] = useState(null)
+
   const [peas, setPeas] = useState(null)
   const [algorithm, setAlgorithm] = useState('Auto-Select Best')
   const [result, setResult] = useState(null)
@@ -60,21 +79,47 @@ export default function SearchPanel() {
     setIsPlaying(false)
     setPlaybackIndex(0)
     try {
-      const data = await pythonRunner.runSearch(algorithm, grid, startNode, goalNode, heuristic)
-      setResult(data)
-      
-      if (['A*', 'Greedy'].includes(algorithm) || algorithm === 'Auto-Select Best') {
-        const analysis = await pythonRunner.analyzeHeuristic(grid, goalNode, heuristic)
-        setHeuristicAnalysis(analysis)
+      if (searchMode === 'graph') {
+        let parsed;
+        try {
+          parsed = JSON.parse(graphJson)
+          setGraphError(null)
+        } catch (err) {
+          setGraphError("Invalid JSON structure: " + err.message)
+          setLoading(false)
+          return
+        }
+        if (!parsed.adjacency_list || !parsed.start || !parsed.goal) {
+          setGraphError("Graph JSON must contain 'adjacency_list', 'start', and 'goal' keys.")
+          setLoading(false)
+          return
+        }
+        const data = await pythonRunner.runGraphSearch(
+          algorithm === "Auto-Select Best" ? "A*" : algorithm,
+          parsed.adjacency_list,
+          parsed.start,
+          parsed.goal,
+          parsed.heuristics || {}
+        )
+        setResult(data)
+        setIsPlaying(true)
       } else {
-        setHeuristicAnalysis(null)
+        const data = await pythonRunner.runSearch(algorithm, grid, startNode, goalNode, heuristic)
+        setResult(data)
+        
+        if (['A*', 'Greedy', 'Bi-directional A*'].includes(algorithm) || algorithm === 'Auto-Select Best') {
+          const analysis = await pythonRunner.analyzeHeuristic(grid, goalNode, heuristic)
+          setHeuristicAnalysis(analysis)
+        } else {
+          setHeuristicAnalysis(null)
+        }
+        
+        // Auto-play the tracer
+        setIsPlaying(true)
       }
-      
-      // Auto-play the tracer
-      setIsPlaying(true)
     } catch (err) {
       console.error(err)
-      alert("Failed to solve maze via Python solver.")
+      alert("Failed to solve search problem.")
     }
     setLoading(false)
   }
@@ -197,13 +242,45 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
       exit={{ opacity: 0, y: -20 }}
       className="p-8 max-w-7xl mx-auto flex flex-col gap-8"
     >
-      <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-        <div className="bg-blue-500/20 p-3 rounded-xl">
-          <Settings2 size={32} className="text-blue-500" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-blue-500/20 p-3 rounded-xl">
+            <Settings2 size={32} className="text-blue-500" />
+          </div>
+          <div>
+            <h1 className="m-0 text-3xl font-bold text-slate-200">Search Engine: Visual Tracer</h1>
+            <p className="m-0 text-slate-400 mt-1">Interactive Pathfinding and Graph Search with Animated Playback</p>
+          </div>
         </div>
-        <div>
-          <h1 className="m-0 text-3xl font-bold text-slate-200">Search Engine: Visual Tracer</h1>
-          <p className="m-0 text-slate-400 mt-1">Interactive Maze Pathfinding with Animated Playback</p>
+        <div className="flex bg-slate-950 p-1.5 rounded-xl border border-white/5 self-start md:self-auto">
+          <button
+            onClick={() => {
+              setSearchMode('maze')
+              setResult(null)
+              resetTracer()
+            }}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              searchMode === 'maze'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Maze Pathfinding
+          </button>
+          <button
+            onClick={() => {
+              setSearchMode('graph')
+              setResult(null)
+              resetTracer()
+            }}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              searchMode === 'graph'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Custom Graph Search
+          </button>
         </div>
       </div>
       
@@ -241,6 +318,7 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
               >
                 <option value="Auto-Select Best">Auto-Select Best Algorithm</option>
                 <option value="A*">A* Search</option>
+                <option value="Bi-directional A*">Bi-directional A*</option>
                 <option value="UCS">Uniform Cost Search (Dijkstra)</option>
                 <option value="Greedy">Greedy Best-First Search</option>
                 <option value="BFS">Breadth First Search (BFS)</option>
@@ -248,42 +326,53 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
               </select>
             </div>
             
-            <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-              <label className="text-sm font-medium text-slate-400">Heuristic (For A* / Greedy)</label>
-              <select 
-                value={heuristic} 
-                onChange={e => {
-                  setHeuristic(e.target.value)
-                  setResult(null)
-                  resetTracer()
-                }} 
-                className="bg-black/40 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
-              >
-                <option value="manhattan">Manhattan Distance (Grid)</option>
-                <option value="euclidean">Euclidean Distance (Direct)</option>
-                <option value="zero">Zero Heuristic (Fallback to UCS)</option>
-              </select>
-            </div>
-            <div className="flex gap-2 mt-4">
+            {searchMode === 'maze' ? (
+              <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                <label className="text-sm font-medium text-slate-400">Heuristic (For A* / Greedy)</label>
+                <select 
+                  value={heuristic} 
+                  onChange={e => {
+                    setHeuristic(e.target.value)
+                    setResult(null)
+                    resetTracer()
+                  }} 
+                  className="bg-black/40 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                >
+                  <option value="manhattan">Manhattan Distance (Grid)</option>
+                  <option value="euclidean">Heuristic: Euclidean Distance</option>
+                  <option value="zero">Zero Heuristic (Fallback to UCS)</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 flex-1 min-w-[200px] text-xs text-slate-400">
+                <span className="font-semibold text-slate-400">Node Heuristics</span>
+                <p className="m-0 leading-normal">
+                  Heuristics are specified dynamically inside the JSON object graph definition below.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2 mt-4 w-full">
               <button 
                 onClick={handleSolve} 
                 disabled={loading}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold transition-all shadow-lg
+                className={`flex-grow flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold transition-all shadow-lg
                   ${loading 
                     ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-400 hover:to-indigo-500 hover:shadow-indigo-500/25 hover:-translate-y-0.5'
                   }`}
               >
                 <Play size={20} className={loading ? 'animate-pulse' : ''} /> 
-                {loading ? 'Solving...' : 'Solve Maze'}
+                {loading ? 'Solving...' : searchMode === 'graph' ? 'Solve Graph' : 'Solve Maze'}
               </button>
 
-              <button 
-                onClick={() => setShowProfiler(true)} 
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold transition-all bg-slate-800 text-purple-400 hover:bg-slate-700 border border-purple-500/30 hover:border-purple-500/60"
-              >
-                <Scale size={20} /> Compare
-              </button>
+              {searchMode === 'maze' && (
+                <button 
+                  onClick={() => setShowProfiler(true)} 
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold transition-all bg-slate-800 text-purple-400 hover:bg-slate-700 border border-purple-500/30 hover:border-purple-500/60 font-semibold"
+                >
+                  <Scale size={20} /> Compare
+                </button>
+              )}
             </div>
           </div>
 
@@ -407,114 +496,253 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
             </div>
           </div>
 
-          {/* Maze Grid */}
-          <div 
-            className="glass-panel flex-1 flex flex-col items-center justify-center bg-black/20 p-8 min-h-[400px]"
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          >
+          {searchMode === 'maze' ? (
+            /* Maze Grid */
             <div 
-              className="grid gap-1 sm:gap-2 max-w-full overflow-auto touch-none" 
-              style={{ gridTemplateColumns: `repeat(${grid[0]?.length || 5}, minmax(1.5rem, 4rem))` }}
+              className="glass-panel flex-grow flex flex-col items-center justify-center bg-black/20 p-8 min-h-[400px]"
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
             >
-              {grid.map((row, r) => row.map((cell, c) => {
-                const isStart = r === startNode[0] && c === startNode[1]
-                const isGoal = r === goalNode[0] && c === goalNode[1]
-                
-                // Determine Tracer State
-                let isVisited = false;
-                let isCurrentExpanding = false;
-                
-                if (result && result.visited_sequence) {
-                  const seq = result.visited_sequence.slice(0, playbackIndex)
-                  isVisited = seq.some(pt => pt.state[0] === r && pt.state[1] === c)
+              <div 
+                className="grid gap-1 sm:gap-2 max-w-full overflow-auto touch-none" 
+                style={{ gridTemplateColumns: `repeat(${grid[0]?.length || 5}, minmax(1.5rem, 4rem))` }}
+              >
+                {grid.map((row, r) => row.map((cell, c) => {
+                  const isStart = r === startNode[0] && c === startNode[1]
+                  const isGoal = r === goalNode[0] && c === goalNode[1]
                   
-                  if (playbackIndex > 0 && playbackIndex <= result.visited_sequence.length) {
-                    const currentPt = result.visited_sequence[playbackIndex - 1]
-                    isCurrentExpanding = currentPt.state[0] === r && currentPt.state[1] === c
+                  // Determine Tracer State
+                  let isVisited = false;
+                  let isCurrentExpanding = false;
+                  
+                  if (result && result.visited_sequence) {
+                    const seq = result.visited_sequence.slice(0, playbackIndex)
+                    isVisited = seq.some(pt => pt.state[0] === r && pt.state[1] === c)
+                    
+                    if (playbackIndex > 0 && playbackIndex <= result.visited_sequence.length) {
+                      const currentPt = result.visited_sequence[playbackIndex - 1]
+                      isCurrentExpanding = currentPt.state[0] === r && currentPt.state[1] === c
+                    }
                   }
-                }
 
-                // Path construction
-                const inPath = isPlaybackComplete && result && result.path && !isStart && !isGoal && (() => {
-                  let currR = 0, currC = 0
-                  for (let move of result.path) {
-                    if (move === 'UP') currR--
-                    else if (move === 'DOWN') currR++
-                    else if (move === 'LEFT') currC--
-                    else if (move === 'RIGHT') currC++
-                    if (currR === r && currC === c) return true
+                  // Path construction
+                  const inPath = isPlaybackComplete && result && result.path && !isStart && !isGoal && (() => {
+                    let currR = 0, currC = 0
+                    for (let move of result.path) {
+                      if (move === 'UP') currR--
+                      else if (move === 'DOWN') currR++
+                      else if (move === 'LEFT') currC--
+                      else if (move === 'RIGHT') currC++
+                      if (currR === r && currC === c) return true
+                    }
+                    return false
+                  })()
+
+                  // Color assignments based on tracer state
+                  let bgColor = 'bg-slate-800/60 border-slate-700' // Default unvisited
+                  let textColor = 'text-transparent'
+                  let shadow = ''
+                  let zIndex = 1
+
+                  if (cell === 1) {
+                    bgColor = 'bg-slate-950 border-slate-900' // Wall
+                  } else if (cell > 1) {
+                    bgColor = 'bg-amber-900/60 border-amber-800/80' // Weighted mud
+                    textColor = 'text-amber-500/50'
                   }
-                  return false
-                })()
 
-                // Color assignments based on tracer state
-                let bgColor = 'bg-slate-800/60 border-slate-700' // Default unvisited
-                let textColor = 'text-transparent'
-                let shadow = ''
-                let zIndex = 1
+                  if (isStart) {
+                    bgColor = 'bg-emerald-500 border-emerald-400'
+                    textColor = 'text-white'
+                  } else if (isGoal) {
+                    bgColor = 'bg-rose-500 border-rose-400'
+                    textColor = 'text-white'
+                  } else if (inPath) {
+                    bgColor = 'bg-amber-400 border-amber-300'
+                    shadow = 'shadow-[0_0_15px_rgba(251,191,36,0.6)]'
+                    zIndex = 10
+                    textColor = 'text-transparent'
+                  } else if (isCurrentExpanding) {
+                    bgColor = 'bg-purple-500 border-purple-400'
+                    shadow = 'shadow-[0_0_20px_rgba(168,85,247,0.8)]'
+                    zIndex = 20
+                    textColor = 'text-transparent'
+                  } else if (isVisited) {
+                    bgColor = 'bg-indigo-500/30 border-indigo-500/50'
+                    textColor = 'text-transparent'
+                  }
 
-                if (cell === 1) {
-                  bgColor = 'bg-slate-950 border-slate-900' // Wall
-                } else if (cell > 1) {
-                  bgColor = 'bg-amber-900/60 border-amber-800/80' // Weighted mud
-                  textColor = 'text-amber-500/50'
-                }
-
-                if (isStart) {
-                  bgColor = 'bg-emerald-500 border-emerald-400'
-                  textColor = 'text-white'
-                } else if (isGoal) {
-                  bgColor = 'bg-rose-500 border-rose-400'
-                  textColor = 'text-white'
-                } else if (inPath) {
-                  bgColor = 'bg-amber-400 border-amber-300'
-                  shadow = 'shadow-[0_0_15px_rgba(251,191,36,0.6)]'
-                  zIndex = 10
-                  textColor = 'text-transparent'
-                } else if (isCurrentExpanding) {
-                  bgColor = 'bg-purple-500 border-purple-400'
-                  shadow = 'shadow-[0_0_20px_rgba(168,85,247,0.8)]'
-                  zIndex = 20
-                  textColor = 'text-transparent'
-                } else if (isVisited) {
-                  bgColor = 'bg-indigo-500/30 border-indigo-500/50'
-                  textColor = 'text-transparent'
-                }
-
-                return (
-                  <motion.div 
-                    key={`${r}-${c}`}
-                    onPointerDown={() => handlePointerDown(r, c)}
-                    onPointerEnter={() => handlePointerEnter(r, c)}
-                    animate={{ backgroundColor: bgColor, boxShadow: shadow }}
-                    transition={{ duration: 0.2 }}
-                    className={`
-                      aspect-square rounded-md sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-lg border-2
-                      cursor-crosshair hover:border-slate-400 select-none
-                      ${bgColor} ${textColor}
-                    `}
-                    style={{ zIndex }}
-                  >
-                    {isStart ? 'S' : isGoal ? 'G' : (cell > 1 && !inPath && !isVisited && !isCurrentExpanding ? cell : '')}
-                  </motion.div>
-                )
-              }))}
+                  return (
+                    <motion.div 
+                      key={`${r}-${c}`}
+                      onPointerDown={() => handlePointerDown(r, c)}
+                      onPointerEnter={() => handlePointerEnter(r, c)}
+                      animate={{ backgroundColor: bgColor, boxShadow: shadow }}
+                      transition={{ duration: 0.2 }}
+                      className={`
+                        aspect-square rounded-md sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-lg border-2
+                        cursor-crosshair hover:border-slate-400 select-none
+                        ${bgColor} ${textColor}
+                      `}
+                      style={{ zIndex }}
+                    >
+                      {isStart ? 'S' : isGoal ? 'G' : (cell > 1 && !inPath && !isVisited && !isCurrentExpanding ? cell : '')}
+                    </motion.div>
+                  )
+                }))}
+              </div>
+              <p className="text-sm text-slate-500 mt-4 text-center">
+                Use the draw tools above and click/drag on the grid.<br/>S = Start | G = Goal | Numbers = Travel Cost
+              </p>
+              {/* Color Legend */}
+              <div className="flex flex-wrap gap-3 justify-center mt-4 text-[10px] text-slate-400 font-medium font-semibold">
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-emerald-500 inline-block" />Start (S)</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-rose-500 inline-block" />Goal (G)</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-purple-500 inline-block" />Expanding</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-indigo-500/30 border border-indigo-500/50 inline-block" />Visited</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-400 inline-block" />Optimal Path</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-slate-950 inline-block border border-slate-800" />Wall</span>
+                <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-900/60 inline-block border border-amber-800/80" />Mud (Cost 5)</span>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 mt-4 text-center">
-              Use the draw tools above and click/drag on the grid.<br/>S = Start | G = Goal | Numbers = Travel Cost
-            </p>
-            {/* Color Legend */}
-            <div className="flex flex-wrap gap-3 justify-center mt-4 text-[10px] text-slate-400 font-medium">
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-emerald-500 inline-block" />Start (S)</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-rose-500 inline-block" />Goal (G)</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-purple-500 inline-block" />Expanding</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-indigo-500/30 border border-indigo-500/50 inline-block" />Visited</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-400 inline-block" />Optimal Path</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-slate-950 inline-block border border-slate-800" />Wall</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded bg-amber-900/60 inline-block border border-amber-800/80" />Mud (Cost 5)</span>
-            </div>
-          </div>
+          ) : (() => {
+            let parsed = null;
+            try {
+              parsed = JSON.parse(graphJson);
+            } catch (e) {}
+            const nodes = parsed && parsed.adjacency_list ? Object.keys(parsed.adjacency_list) : [];
+            const startNodeName = parsed ? parsed.start : '';
+            const goalNodeName = parsed ? parsed.goal : '';
+            
+            // Reconstruct path nodes from actions like "GO_TO_B"
+            const pathNodes = [];
+            if (result && result.path && parsed) {
+              pathNodes.push(startNodeName);
+              for (let action of result.path) {
+                if (action.startsWith("GO_TO_")) {
+                  pathNodes.push(action.substring(6));
+                } else {
+                  pathNodes.push(action);
+                }
+              }
+            }
+
+            return (
+              <div className="glass-panel flex-grow flex flex-col bg-black/20 p-6 min-h-[400px]">
+                <h3 className="m-0 mb-4 text-blue-400 font-semibold">Graph Visualization (States & Adjacency)</h3>
+                
+                {nodes.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+                    Enter a valid JSON graph to view the nodes list.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                    {nodes.map(node => {
+                      const isStart = node === startNodeName;
+                      const isGoal = node === goalNodeName;
+                      
+                      // Check visited status
+                      const isVisited = result && result.visited_sequence && 
+                        result.visited_sequence.slice(0, playbackIndex).some(pt => pt.state === node);
+                      
+                      // Check active expanding status
+                      const isCurrentExpanding = result && result.visited_sequence && 
+                        playbackIndex > 0 && playbackIndex <= result.visited_sequence.length && 
+                        result.visited_sequence[playbackIndex - 1].state === node;
+                      
+                      // Check path status
+                      const inPath = isPlaybackComplete && pathNodes.includes(node);
+
+                      // Determine styling
+                      let cardStyle = 'border-slate-800 bg-slate-900/40 text-slate-300';
+                      let statusBadge = null;
+
+                      if (isStart) {
+                        cardStyle = 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.15)]';
+                        statusBadge = <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Start</span>;
+                      } else if (isGoal) {
+                        cardStyle = 'border-rose-500 bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.15)]';
+                        statusBadge = <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">Goal</span>;
+                      }
+
+                      if (inPath) {
+                        cardStyle = 'border-amber-400 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.25)]';
+                        statusBadge = <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">Path</span>;
+                      } else if (isCurrentExpanding) {
+                        cardStyle = 'border-purple-500 bg-purple-500/25 shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-pulse';
+                        statusBadge = <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">Expanding</span>;
+                      } else if (isVisited) {
+                        cardStyle = 'border-indigo-500/50 bg-indigo-500/10';
+                        statusBadge = <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Visited</span>;
+                      }
+
+                      const heuristicVal = parsed.heuristics && parsed.heuristics[node] !== undefined 
+                        ? parsed.heuristics[node] 
+                        : 0.0;
+                      
+                      const neighbors = parsed.adjacency_list[node] || [];
+
+                      return (
+                        <div key={node} className={`p-4 rounded-xl border-2 transition-all duration-300 ${cardStyle}`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-lg font-bold text-white">Node {node}</span>
+                            {statusBadge}
+                          </div>
+                          
+                          <div className="text-xs space-y-2 mt-3">
+                            <div className="flex justify-between border-b border-white/5 pb-1">
+                              <span className="text-slate-500">Heuristic (h)</span>
+                              <strong className="text-amber-400">{heuristicVal.toFixed(1)}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block mb-1">Outbound Edges:</span>
+                              {neighbors.length === 0 ? (
+                                <span className="text-slate-600 italic">None</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5 mt-1">
+                                  {neighbors.map(([neighbor, cost], i) => (
+                                    <span key={i} className="px-2 py-1 rounded bg-black/40 text-[10px] text-slate-300 border border-white/5">
+                                      {neighbor} <span className="text-indigo-400">({cost})</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Path display breadcrumbs */}
+                {result && result.path && isPlaybackComplete && (
+                  <div className="mt-6 p-4 bg-slate-950/40 border border-white/5 rounded-xl">
+                    <span className="text-xs text-slate-500 block mb-2">Optimal Reconstructed Path:</span>
+                    <div className="flex flex-wrap items-center gap-2 font-mono text-sm">
+                      {pathNodes.map((n, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                            {n}
+                          </span>
+                          {i < pathNodes.length - 1 && <span className="text-slate-600">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Visual Legend */}
+                <div className="flex flex-wrap gap-3 justify-center mt-6 text-[10px] text-slate-400 font-medium">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-emerald-500/50 bg-emerald-500/10 inline-block" />Start</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-rose-500/50 bg-rose-500/10 inline-block" />Goal</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-purple-500 bg-purple-500/20 inline-block" />Expanding</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-indigo-500/50 bg-indigo-500/10 inline-block" />Visited</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-amber-400 bg-amber-400/10 inline-block" />Optimal Path</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <AnimatePresence>
