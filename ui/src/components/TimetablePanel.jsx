@@ -431,7 +431,10 @@ export default function TimetablePanel() {
 
                 {/* Calendar Grid rendering */}
                 <div className="flex-1 overflow-x-auto min-w-full">
-                  <div className="grid grid-cols-6 border border-white/10 rounded-xl overflow-hidden shadow-inner text-center min-w-[550px]">
+                  <div 
+                    className="grid border border-white/10 rounded-xl overflow-hidden shadow-inner text-center min-w-[550px]"
+                    style={{ gridTemplateColumns: `repeat(${periodsPerDay + 1}, minmax(0, 1fr))` }}
+                  >
                     
                     {/* Grid Header */}
                     <div className="bg-black/45 border-b border-r border-white/10 p-2 text-xs font-bold text-slate-400">Day / Period</div>
