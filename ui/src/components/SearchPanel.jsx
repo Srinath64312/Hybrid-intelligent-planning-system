@@ -6,6 +6,22 @@ import { anthropicClient } from '../anthropicClient'
 
 export default function SearchPanel() {
   const [searchMode, setSearchMode] = useState('maze') // maze, graph
+  const [graph, setGraph] = useState({
+    adjacency_list: {
+      "A": [["B", 1.0], ["C", 4.0]],
+      "B": [["C", 2.0], ["D", 6.0]],
+      "C": [["D", 3.0]],
+      "D": []
+    },
+    heuristics: {
+      "A": 4.0,
+      "B": 3.0,
+      "C": 1.0,
+      "D": 0.0
+    },
+    start: "A",
+    goal: "D"
+  })
   const [graphJson, setGraphJson] = useState(JSON.stringify({
     adjacency_list: {
       "A": [["B", 1.0], ["C", 4.0]],
@@ -23,6 +39,149 @@ export default function SearchPanel() {
     goal: "D"
   }, null, 2))
   const [graphError, setGraphError] = useState(null)
+  const [showJsonEditor, setShowJsonEditor] = useState(false)
+
+  // Visual Form Editor States
+  const [newNodeName, setNewNodeName] = useState('')
+  const [newNodeHeuristic, setNewNodeHeuristic] = useState(0.0)
+  const [edgeSource, setEdgeSource] = useState('A')
+  const [edgeTarget, setEdgeTarget] = useState('B')
+  const [edgeWeight, setEdgeWeight] = useState(1.0)
+
+  const handleAddNode = () => {
+    const name = newNodeName.trim().toUpperCase()
+    if (!name) return
+    
+    setGraph(prev => {
+      const nextAdj = { ...prev.adjacency_list }
+      if (!nextAdj[name]) {
+        nextAdj[name] = []
+      }
+      const nextHeuristics = { ...prev.heuristics, [name]: parseFloat(newNodeHeuristic) || 0.0 }
+      
+      const newGraph = {
+        adjacency_list: nextAdj,
+        heuristics: nextHeuristics,
+        start: prev.start || name,
+        goal: prev.goal || name
+      }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setNewNodeName('')
+    setNewNodeHeuristic(0.0)
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleDeleteNode = (nodeName) => {
+    setGraph(prev => {
+      const nextAdj = { ...prev.adjacency_list }
+      delete nextAdj[nodeName]
+      for (let key in nextAdj) {
+        nextAdj[key] = nextAdj[key].filter(([neighbor]) => neighbor !== nodeName)
+      }
+      const nextHeuristics = { ...prev.heuristics }
+      delete nextHeuristics[nodeName]
+      
+      const remainingNodes = Object.keys(nextAdj)
+      let nextStart = prev.start === nodeName ? (remainingNodes[0] || '') : prev.start
+      let nextGoal = prev.goal === nodeName ? (remainingNodes[0] || '') : prev.goal
+      
+      const newGraph = {
+        adjacency_list: nextAdj,
+        heuristics: nextHeuristics,
+        start: nextStart,
+        goal: nextGoal
+      }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleAddEdge = () => {
+    if (!edgeSource || !edgeTarget) return
+    if (edgeSource === edgeTarget) {
+      alert("Source and target nodes must be different.")
+      return
+    }
+    
+    setGraph(prev => {
+      const nextAdj = { ...prev.adjacency_list }
+      if (!nextAdj[edgeSource]) nextAdj[edgeSource] = []
+      if (!nextAdj[edgeTarget]) nextAdj[edgeTarget] = []
+      
+      const idx = nextAdj[edgeSource].findIndex(([n]) => n === edgeTarget)
+      if (idx > -1) {
+        nextAdj[edgeSource][idx] = [edgeTarget, parseFloat(edgeWeight) || 0.0]
+      } else {
+        nextAdj[edgeSource].push([edgeTarget, parseFloat(edgeWeight) || 0.0])
+      }
+      
+      const newGraph = {
+        ...prev,
+        adjacency_list: nextAdj
+      }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleDeleteEdge = (source, target) => {
+    setGraph(prev => {
+      const nextAdj = { ...prev.adjacency_list }
+      if (nextAdj[source]) {
+        nextAdj[source] = nextAdj[source].filter(([n]) => n !== target)
+      }
+      const newGraph = {
+        ...prev,
+        adjacency_list: nextAdj
+      }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleSetStartNode = (val) => {
+    setGraph(prev => {
+      const newGraph = { ...prev, start: val }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleSetGoalNode = (val) => {
+    setGraph(prev => {
+      const newGraph = { ...prev, goal: val }
+      setGraphJson(JSON.stringify(newGraph, null, 2))
+      return newGraph
+    })
+    setResult(null)
+    resetTracer()
+  }
+
+  const handleJsonChange = (val) => {
+    setGraphJson(val)
+    try {
+      const parsed = JSON.parse(val)
+      if (parsed && parsed.adjacency_list && parsed.start && parsed.goal) {
+        setGraph(parsed)
+        setGraphError(null)
+      } else {
+        setGraphError("Graph JSON must contain 'adjacency_list', 'start', and 'goal' keys.")
+      }
+    } catch (err) {
+      setGraphError("Invalid JSON structure: " + err.message)
+    }
+  }
 
   const [peas, setPeas] = useState(null)
   const [algorithm, setAlgorithm] = useState('Auto-Select Best')
@@ -80,26 +239,17 @@ export default function SearchPanel() {
     setPlaybackIndex(0)
     try {
       if (searchMode === 'graph') {
-        let parsed;
-        try {
-          parsed = JSON.parse(graphJson)
-          setGraphError(null)
-        } catch (err) {
-          setGraphError("Invalid JSON structure: " + err.message)
-          setLoading(false)
-          return
-        }
-        if (!parsed.adjacency_list || !parsed.start || !parsed.goal) {
-          setGraphError("Graph JSON must contain 'adjacency_list', 'start', and 'goal' keys.")
+        if (!graph.adjacency_list || !graph.start || !graph.goal) {
+          alert("Graph must contain nodes, a start node, and a goal node.")
           setLoading(false)
           return
         }
         const data = await pythonRunner.runGraphSearch(
           algorithm === "Auto-Select Best" ? "A*" : algorithm,
-          parsed.adjacency_list,
-          parsed.start,
-          parsed.goal,
-          parsed.heuristics || {}
+          graph.adjacency_list,
+          graph.start,
+          graph.goal,
+          graph.heuristics || {}
         )
         setResult(data)
         setIsPlaying(true)
@@ -450,51 +600,222 @@ Explain briefly in 2 short paragraphs why these differences occurred based on th
             )}
           </AnimatePresence>
           
-          {/* Maze Grid Controls */}
-          <div className="glass-panel p-6 border-emerald-500/20">
-            <h3 className="m-0 mb-4 text-emerald-400 font-semibold flex items-center gap-2">Pathfinding Arena Controls</h3>
-            
-            <div className="flex flex-wrap gap-2 mb-6 p-1 bg-black/30 rounded-xl border border-white/5 w-fit">
-              <button onClick={() => setDrawMode('wall')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'wall' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                <MousePointer2 size={16} /> Draw Wall
-              </button>
-              <button onClick={() => setDrawMode('weight')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'weight' ? 'bg-amber-600/30 text-amber-400 border border-amber-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                <Mountain size={16} /> Draw Mud (Cost: 5)
-              </button>
-              <button onClick={() => setDrawMode('start')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'start' ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                <MapPin size={16} /> Move Start
-              </button>
-              <button onClick={() => setDrawMode('goal')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'goal' ? 'bg-rose-600/30 text-rose-400 border border-rose-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                <Flag size={16} /> Move Goal
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <label className="text-sm font-medium text-slate-400">Grid Size</label>
-                    <span className="text-sm text-emerald-300 font-bold">{mazeSize}x{mazeSize}</span>
-                  </div>
-                  <input type="range" min="3" max="15" value={mazeSize} onChange={e => setMazeSize(parseInt(e.target.value))} className="w-full accent-emerald-500" />
-                </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <label className="text-sm font-medium text-slate-400">Obstacle Density</label>
-                    <span className="text-sm text-emerald-300 font-bold">{Math.round(mazeDensity * 100)}%</span>
-                  </div>
-                  <input type="range" min="0" max="0.5" step="0.05" value={mazeDensity} onChange={e => setMazeDensity(parseFloat(e.target.value))} className="w-full accent-emerald-500" />
-                </div>
+          {searchMode === 'maze' ? (
+            /* Maze Grid Controls */
+            <div className="glass-panel p-6 border-emerald-500/20">
+              <h3 className="m-0 mb-4 text-emerald-400 font-semibold flex items-center gap-2">Pathfinding Arena Controls</h3>
+              
+              <div className="flex flex-wrap gap-2 mb-6 p-1 bg-black/30 rounded-xl border border-white/5 w-fit">
+                <button onClick={() => setDrawMode('wall')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'wall' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  <MousePointer2 size={16} /> Draw Wall
+                </button>
+                <button onClick={() => setDrawMode('weight')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'weight' ? 'bg-amber-600/30 text-amber-400 border border-amber-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  <Mountain size={16} /> Draw Mud (Cost: 5)
+                </button>
+                <button onClick={() => setDrawMode('start')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'start' ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  <MapPin size={16} /> Move Start
+                </button>
+                <button onClick={() => setDrawMode('goal')} className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all ${drawMode === 'goal' ? 'bg-rose-600/30 text-rose-400 border border-rose-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  <Flag size={16} /> Move Goal
+                </button>
               </div>
-              <button 
-                onClick={handleGenerateMaze} 
-                disabled={loading}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-all border border-emerald-500/30 hover:border-emerald-500/60"
-              >
-                <Shuffle size={18} /> Generate New Maze
-              </button>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <label className="text-sm font-medium text-slate-400">Grid Size</label>
+                      <span className="text-sm text-emerald-300 font-bold">{mazeSize}x{mazeSize}</span>
+                    </div>
+                    <input type="range" min="3" max="15" value={mazeSize} onChange={e => setMazeSize(parseInt(e.target.value))} className="w-full accent-emerald-500" />
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <label className="text-sm font-medium text-slate-400">Obstacle Density</label>
+                      <span className="text-sm text-emerald-300 font-bold">{Math.round(mazeDensity * 100)}%</span>
+                    </div>
+                    <input type="range" min="0" max="0.5" step="0.05" value={mazeDensity} onChange={e => setMazeDensity(parseFloat(e.target.value))} className="w-full accent-emerald-500" />
+                  </div>
+                </div>
+                <button 
+                  onClick={handleGenerateMaze} 
+                  disabled={loading}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-all border border-emerald-500/30 hover:border-emerald-500/60 font-semibold"
+                >
+                  <Shuffle size={18} /> Generate New Maze
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Graph Editor & Form Controls */
+            <div className="glass-panel p-6 border-blue-500/20 flex flex-col gap-6">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <h3 className="m-0 text-blue-400 font-semibold flex items-center gap-2">Graph Interactive Editor</h3>
+                <button
+                  onClick={() => setShowJsonEditor(prev => !prev)}
+                  className="px-3 py-1 rounded text-xs bg-slate-800 text-blue-300 border border-blue-500/20 hover:bg-slate-700 font-semibold transition-all"
+                >
+                  {showJsonEditor ? "Switch to Forms View" : "Switch to Raw JSON"}
+                </button>
+              </div>
+
+              {showJsonEditor ? (
+                <div className="flex flex-col gap-3">
+                  <textarea
+                    value={graphJson}
+                    onChange={e => handleJsonChange(e.target.value)}
+                    className="w-full h-80 bg-black/60 border border-slate-700 rounded-xl p-4 font-mono text-sm text-slate-300 focus:border-blue-500 outline-none resize-y"
+                    placeholder="Enter graph JSON definition..."
+                  />
+                  {graphError && (
+                    <div className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2 rounded-lg">
+                      {graphError}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-5 text-sm">
+                  {/* Nodes & Heuristics Form */}
+                  <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
+                    <h4 className="m-0 text-white font-medium">Nodes & Heuristic Estimation (h)</h4>
+                    <div className="flex gap-2">
+                      <div className="flex-grow">
+                        <input
+                          type="text"
+                          value={newNodeName}
+                          onChange={e => setNewNodeName(e.target.value)}
+                          placeholder="Node name (e.g. E)"
+                          className="w-full bg-black/40 border border-slate-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={newNodeHeuristic}
+                          onChange={e => setNewNodeHeuristic(parseFloat(e.target.value) || 0.0)}
+                          placeholder="h(n)"
+                          className="w-full bg-black/40 border border-slate-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddNode}
+                        className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all text-xs shrink-0"
+                      >
+                        Add Node
+                      </button>
+                    </div>
+                    {/* Nodes list */}
+                    <div className="flex flex-wrap gap-2 pt-1 max-h-24 overflow-y-auto pr-1 custom-scrollbar">
+                      {Object.keys(graph.adjacency_list).map(node => (
+                        <div key={node} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-xs text-slate-300 border border-white/5">
+                          <span>{node} <span className="text-amber-400">({(graph.heuristics[node] || 0.0).toFixed(1)})</span></span>
+                          <button
+                            onClick={() => handleDeleteNode(node)}
+                            className="text-slate-500 hover:text-rose-400 transition-colors font-bold text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Edges & Weights Form */}
+                  <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
+                    <h4 className="m-0 text-white font-medium">Add/Update Edge Weights</h4>
+                    <div className="flex gap-2 items-center">
+                      <div className="flex-grow min-w-0">
+                        <select
+                          value={edgeSource}
+                          onChange={e => setEdgeSource(e.target.value)}
+                          className="w-full bg-black/40 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none focus:border-blue-500 text-xs"
+                        >
+                          <option value="">Source</option>
+                          {Object.keys(graph.adjacency_list).map(n => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="text-slate-500">→</span>
+                      <div className="flex-grow min-w-0">
+                        <select
+                          value={edgeTarget}
+                          onChange={e => setEdgeTarget(e.target.value)}
+                          className="w-full bg-black/40 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none focus:border-blue-500 text-xs"
+                        >
+                          <option value="">Target</option>
+                          {Object.keys(graph.adjacency_list).map(n => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-16">
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={edgeWeight}
+                          onChange={e => setEdgeWeight(parseFloat(e.target.value) || 0.0)}
+                          placeholder="Wt"
+                          className="w-full bg-black/40 border border-slate-700 rounded-lg px-2 py-1.5 text-white outline-none focus:border-blue-500 text-xs"
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddEdge}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all text-xs shrink-0"
+                      >
+                        Add Edge
+                      </button>
+                    </div>
+                    {/* Edges list */}
+                    <div className="max-h-32 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
+                      {Object.entries(graph.adjacency_list).flatMap(([src, edges]) => 
+                        edges.map(([dst, weight]) => (
+                          <div key={`${src}-${dst}`} className="flex justify-between items-center px-3 py-1.5 rounded-lg bg-slate-900/60 border border-white/5 text-xs text-slate-300">
+                            <span>Node {src} <span className="text-indigo-400">→</span> Node {dst} <span className="text-slate-500">(weight:</span> <strong className="text-amber-400">{weight}</strong><span className="text-slate-500">)</span></span>
+                            <button
+                              onClick={() => handleDeleteEdge(src, dst)}
+                              className="text-slate-500 hover:text-rose-400 transition-colors font-bold text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Start/Goal setup */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Start Node</label>
+                      <select
+                        value={graph.start}
+                        onChange={e => handleSetStartNode(e.target.value)}
+                        className="w-full bg-black/40 border border-slate-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-blue-500"
+                      >
+                        {Object.keys(graph.adjacency_list).map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Goal Node</label>
+                      <select
+                        value={graph.goal}
+                        onChange={e => handleSetGoalNode(e.target.value)}
+                        className="w-full bg-black/40 border border-slate-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-blue-500"
+                      >
+                        {Object.keys(graph.adjacency_list).map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {searchMode === 'maze' ? (
             /* Maze Grid */
