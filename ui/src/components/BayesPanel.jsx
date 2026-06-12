@@ -249,10 +249,22 @@ export default function BayesPanel() {
     try {
       // 1. Run Exact Inference
       const exactData = await pythonRunner.runBayes("Exact Enumeration", queryVar, evidence, cpts)
+      if (exactData.error) {
+        console.error("Exact inference failed in Python:", exactData.error, exactData.traceback)
+        alert("Python Exact Inference Error: " + exactData.error)
+        setLoading(false)
+        return
+      }
       setExactResult(exactData)
       
       // 2. Run Rejection Sampling
       const samplingData = await pythonRunner.runBayes("Rejection Sampling", queryVar, evidence, cpts, numSamples)
+      if (samplingData.error) {
+        console.error("Sampling inference failed in Python:", samplingData.error, samplingData.traceback)
+        alert("Python Sampling Inference Error: " + samplingData.error)
+        setLoading(false)
+        return
+      }
       setSamplingResult(samplingData)
     } catch (err) {
       console.error(err)

@@ -319,30 +319,37 @@ json.dumps(res_dict)
   
   async runBayes(method, queryVar, evidence, customCpts, numSamples = 5000) {
     const code = `
-from src.engines.bayes_engine import BayesNetwork, run_exact_inference, run_rejection_sampling
+import traceback
+try:
+    from src.engines.bayes_engine import BayesNetwork, run_exact_inference, run_rejection_sampling
 
-bn = BayesNetwork()
-for name, data in customCpts.items():
-    parents = data["parents"]
-    table = {}
-    for key_str, prob in data["table"].items():
-        if key_str == "":
-            key = ()
-        else:
-            key = tuple(k == "true" for k in key_str.split(","))
-        table[key] = float(prob)
-    bn.add_node(name, parents, table)
+    bn = BayesNetwork()
+    for name, data in customCpts.items():
+        parents = data["parents"]
+        table = {}
+        for key_str, prob in data["table"].items():
+            if key_str == "":
+                key = ()
+            else:
+                key = tuple(k == "true" for k in key_str.split(","))
+            table[key] = float(prob)
+        bn.add_node(name, parents, table)
 
-if method == "Exact Enumeration":
-    result = run_exact_inference(bn, queryVar, evidence)
-else:
-    result = run_rejection_sampling(bn, queryVar, evidence, numSamples)
+    if method == "Exact Enumeration":
+        result = run_exact_inference(bn, queryVar, evidence)
+    else:
+        result = run_rejection_sampling(bn, queryVar, evidence, numSamples)
 
-res_dict = {
-    "posterior_prob": result.posterior_prob,
-    "runtime": result.runtime,
-    "trace": result.trace
-}
+    res_dict = {
+        "posterior_prob": result.posterior_prob,
+        "runtime": result.runtime,
+        "trace": result.trace
+    }
+except Exception as e:
+    res_dict = {
+        "error": str(e),
+        "traceback": traceback.format_exc()
+    }
 import json
 json.dumps(res_dict)
 `;
