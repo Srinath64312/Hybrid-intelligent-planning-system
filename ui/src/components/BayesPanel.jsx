@@ -3,57 +3,165 @@ import { Play, Sliders, Activity, Percent, Database, HelpCircle, Eye, RefreshCw,
 import { motion, AnimatePresence } from 'framer-motion'
 import { pythonRunner } from '../pythonRunner'
 
-const initialCpts = {
-  Flu: {
-    parents: [],
-    table: {
-      '': 0.05
-    }
+const PRESETS = {
+  medical: {
+    name: 'Medical Diagnosis',
+    description: 'A network demonstrating diagnostic reasoning: smokes/flu causing coughing and sore throat.',
+    queryVar: 'Flu',
+    selectedNode: 'Flu',
+    evidence: {
+      Cough: true,
+      SoreThroat: true
+    },
+    cpts: {
+      Flu: {
+        parents: [],
+        table: { '': 0.05 }
+      },
+      Smokes: {
+        parents: [],
+        table: { '': 0.20 }
+      },
+      SoreThroat: {
+        parents: ['Flu'],
+        table: { 'true': 0.60, 'false': 0.05 }
+      },
+      Cough: {
+        parents: ['Flu', 'Smokes'],
+        table: {
+          'true,true': 0.90,
+          'true,false': 0.70,
+          'false,true': 0.40,
+          'false,false': 0.10
+        }
+      }
+    },
+    nodeLayout: {
+      Smokes: { x: 150, y: 80, label: 'Smokes', color: '#f59e0b' },
+      Flu: { x: 380, y: 80, label: 'Flu', color: '#c084fc' },
+      Cough: { x: 265, y: 230, label: 'Cough', color: '#38bdf8' },
+      SoreThroat: { x: 490, y: 230, label: 'Sore Throat', color: '#10b981' }
+    },
+    edges: [
+      { from: 'Smokes', to: 'Cough' },
+      { from: 'Flu', to: 'Cough' },
+      { from: 'Flu', to: 'SoreThroat' }
+    ]
   },
-  Smokes: {
-    parents: [],
-    table: {
-      '': 0.20
-    }
+  sprinkler: {
+    name: 'Grass Wetness (Sprinkler)',
+    description: 'A network analyzing rain and sprinkler settings: cloudy sky causing rain and sprinkler use, both leading to wet grass.',
+    queryVar: 'Cloudy',
+    selectedNode: 'Cloudy',
+    evidence: {
+      WetGrass: true
+    },
+    cpts: {
+      Cloudy: {
+        parents: [],
+        table: { '': 0.50 }
+      },
+      Sprinkler: {
+        parents: ['Cloudy'],
+        table: { 'true': 0.10, 'false': 0.50 }
+      },
+      Rain: {
+        parents: ['Cloudy'],
+        table: { 'true': 0.80, 'false': 0.20 }
+      },
+      WetGrass: {
+        parents: ['Sprinkler', 'Rain'],
+        table: {
+          'true,true': 0.99,
+          'true,false': 0.90,
+          'false,true': 0.90,
+          'false,false': 0.01
+        }
+      }
+    },
+    nodeLayout: {
+      Cloudy: { x: 320, y: 60, label: 'Cloudy', color: '#c084fc' },
+      Sprinkler: { x: 180, y: 165, label: 'Sprinkler', color: '#f59e0b' },
+      Rain: { x: 460, y: 165, label: 'Rain', color: '#38bdf8' },
+      WetGrass: { x: 320, y: 270, label: 'Wet Grass', color: '#10b981' }
+    },
+    edges: [
+      { from: 'Cloudy', to: 'Sprinkler' },
+      { from: 'Cloudy', to: 'Rain' },
+      { from: 'Sprinkler', to: 'WetGrass' },
+      { from: 'Rain', to: 'WetGrass' }
+    ]
   },
-  SoreThroat: {
-    parents: ['Flu'],
-    table: {
-      'true': 0.60,
-      'false': 0.05
-    }
-  },
-  Cough: {
-    parents: ['Flu', 'Smokes'],
-    table: {
-      'true,true': 0.90,
-      'true,false': 0.70,
-      'false,true': 0.40,
-      'false,false': 0.10
-    }
+  alarm: {
+    name: 'Burglary Alarm',
+    description: 'A classic network about a burglary/earthquake alarm: John or Mary calling when the alarm rings.',
+    queryVar: 'Burglary',
+    selectedNode: 'Burglary',
+    evidence: {
+      Alarm: true
+    },
+    cpts: {
+      Burglary: {
+        parents: [],
+        table: { '': 0.02 }
+      },
+      Earthquake: {
+        parents: [],
+        table: { '': 0.05 }
+      },
+      Alarm: {
+        parents: ['Burglary', 'Earthquake'],
+        table: {
+          'true,true': 0.95,
+          'true,false': 0.94,
+          'false,true': 0.29,
+          'false,false': 0.001
+        }
+      },
+      JohnCalls: {
+        parents: ['Alarm'],
+        table: { 'true': 0.90, 'false': 0.05 }
+      },
+      MaryCalls: {
+        parents: ['Alarm'],
+        table: { 'true': 0.70, 'false': 0.01 }
+      }
+    },
+    nodeLayout: {
+      Burglary: { x: 180, y: 60, label: 'Burglary', color: '#f59e0b' },
+      Earthquake: { x: 420, y: 60, label: 'Earthquake', color: '#c084fc' },
+      Alarm: { x: 300, y: 155, label: 'Alarm', color: '#38bdf8' },
+      JohnCalls: { x: 180, y: 260, label: 'John Calls', color: '#10b981' },
+      MaryCalls: { x: 420, y: 260, label: 'Mary Calls', color: '#ec4899' }
+    },
+    edges: [
+      { from: 'Burglary', to: 'Alarm' },
+      { from: 'Earthquake', to: 'Alarm' },
+      { from: 'Alarm', to: 'JohnCalls' },
+      { from: 'Alarm', to: 'MaryCalls' }
+    ]
   }
 }
 
 export default function BayesPanel() {
   const [peas, setPeas] = useState(null)
-  const [cpts, setCpts] = useState(initialCpts)
-  
-  // Selection and Evidence states
-  const [selectedNode, setSelectedNode] = useState('Flu')
-  const [evidence, setEvidence] = useState({
-    Cough: true,
-    SoreThroat: true
-  })
-  const [queryVar, setQueryVar] = useState('Flu')
-  
+  const [activePresetKey, setActivePresetKey] = useState('medical')
+
+  const activePreset = PRESETS[activePresetKey]
+
+  const [cpts, setCpts] = useState(activePreset.cpts)
+  const [selectedNode, setSelectedNode] = useState(activePreset.selectedNode)
+  const [evidence, setEvidence] = useState(activePreset.evidence)
+  const [queryVar, setQueryVar] = useState(activePreset.queryVar)
+
   // CPT editing temporary states
   const [editValues, setEditValues] = useState({})
-  
+
   // Results
   const [exactResult, setExactResult] = useState(null)
   const [samplingResult, setSamplingResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  
+
   // Sample size for Rejection Sampling
   const [numSamples, setNumSamples] = useState(5000)
 
@@ -71,12 +179,19 @@ export default function BayesPanel() {
   }, [selectedNode, cpts])
 
   // Coordinate mapping for nodes in visual SVG network
-  const nodeLayout = {
-    Smokes: { x: 150, y: 80, label: 'Smokes', color: '#f59e0b' },
-    Flu: { x: 380, y: 80, label: 'Flu', color: '#c084fc' },
-    Cough: { x: 265, y: 230, label: 'Cough', color: '#38bdf8' },
-    SoreThroat: { x: 490, y: 230, label: 'Sore Throat', color: '#10b981' }
+  const nodeLayout = activePreset.nodeLayout
+
+  const handlePresetChange = (presetKey) => {
+    setActivePresetKey(presetKey)
+    const preset = PRESETS[presetKey]
+    setCpts(preset.cpts)
+    setSelectedNode(preset.selectedNode)
+    setEvidence(preset.evidence)
+    setQueryVar(preset.queryVar)
+    setExactResult(null)
+    setSamplingResult(null)
   }
+
 
   // Handle evidence toggling
   const handleToggleEvidence = (nodeName, val) => {
@@ -152,7 +267,7 @@ export default function BayesPanel() {
       className="p-8 max-w-7xl mx-auto flex flex-col gap-8"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4 gap-4">
         <div className="flex items-center gap-4">
           <div className="bg-indigo-500/20 p-3 rounded-xl">
             <Activity size={32} className="text-indigo-400" />
@@ -161,6 +276,19 @@ export default function BayesPanel() {
             <h1 className="m-0 text-3xl font-bold text-slate-200">Bayesian Network Suite</h1>
             <p className="m-0 text-slate-400 mt-1">Belief Propagation & Diagnostic Inference Engine</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <label className="text-xs text-slate-500 font-bold uppercase whitespace-nowrap">Network Preset:</label>
+          <select 
+            value={activePresetKey} 
+            onChange={e => handlePresetChange(e.target.value)}
+            className="bg-black/40 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none transition-all"
+          >
+            <option value="medical">Medical Diagnosis</option>
+            <option value="sprinkler">Grass Wetness (Sprinkler)</option>
+            <option value="alarm">Burglary Alarm</option>
+          </select>
         </div>
       </div>
 
@@ -207,26 +335,19 @@ export default function BayesPanel() {
                 </defs>
                 
                 {/* Edges (Arrows) */}
-                {/* Smokes -> Cough */}
-                <line 
-                  x1={nodeLayout.Smokes.x} y1={nodeLayout.Smokes.y} 
-                  x2={nodeLayout.Cough.x} y2={nodeLayout.Cough.y} 
-                  stroke="#6366f1" strokeWidth="2.5" markerEnd="url(#arrow)"
-                />
-                
-                {/* Flu -> Cough */}
-                <line 
-                  x1={nodeLayout.Flu.x} y1={nodeLayout.Flu.y} 
-                  x2={nodeLayout.Cough.x} y2={nodeLayout.Cough.y} 
-                  stroke="#6366f1" strokeWidth="2.5" markerEnd="url(#arrow)"
-                />
-                
-                {/* Flu -> SoreThroat */}
-                <line 
-                  x1={nodeLayout.Flu.x} y1={nodeLayout.Flu.y} 
-                  x2={nodeLayout.SoreThroat.x} y2={nodeLayout.SoreThroat.y} 
-                  stroke="#6366f1" strokeWidth="2.5" markerEnd="url(#arrow)"
-                />
+                {activePreset.edges.map((edge, idx) => {
+                  const fromNode = nodeLayout[edge.from];
+                  const toNode = nodeLayout[edge.to];
+                  if (!fromNode || !toNode) return null;
+                  return (
+                    <line 
+                      key={idx}
+                      x1={fromNode.x} y1={fromNode.y} 
+                      x2={toNode.x} y2={toNode.y} 
+                      stroke="#6366f1" strokeWidth="2.5" markerEnd="url(#arrow)"
+                    />
+                  );
+                })}
                 
                 {/* Nodes rendering */}
                 {Object.entries(nodeLayout).map(([name, pos]) => {

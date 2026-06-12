@@ -675,6 +675,21 @@ class TestBayesEngine:
         assert 0.0 <= result_true.posterior_prob <= 1.0
         assert 0.0 <= result_false.posterior_prob <= 1.0
 
+    def test_sprinkler_network_exact_inference(self):
+        from src.problems.diagnosis import build_sprinkler_network
+        from src.engines.bayes_engine import run_exact_inference
+        bn = build_sprinkler_network()
+        res = run_exact_inference(bn, "Cloudy", {"WetGrass": True})
+        assert 0.0 <= res.posterior_prob <= 1.0
+
+    def test_alarm_network_exact_inference(self):
+        from src.problems.diagnosis import build_alarm_network
+        from src.engines.bayes_engine import run_exact_inference
+        bn = build_alarm_network()
+        res = run_exact_inference(bn, "Burglary", {"Alarm": True})
+        assert 0.0 <= res.posterior_prob <= 1.0
+
+
 
 # ─────────────────────────────────────────────────────────────────
 #  SECTION 6: NEGOTIATION

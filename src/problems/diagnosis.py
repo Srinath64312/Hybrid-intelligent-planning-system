@@ -59,3 +59,43 @@ def build_campus_decision_network() -> DecisionNetwork:
     })
     
     return dn
+
+def build_sprinkler_network() -> BayesNetwork:
+    bn = BayesNetwork()
+    bn.add_node("Cloudy", [], {(): 0.50})
+    bn.add_node("Sprinkler", ["Cloudy"], {
+        (True,): 0.10,
+        (False,): 0.50
+    })
+    bn.add_node("Rain", ["Cloudy"], {
+        (True,): 0.80,
+        (False,): 0.20
+    })
+    bn.add_node("WetGrass", ["Sprinkler", "Rain"], {
+        (True, True): 0.99,
+        (True, False): 0.90,
+        (False, True): 0.90,
+        (False, False): 0.01
+    })
+    return bn
+
+def build_alarm_network() -> BayesNetwork:
+    bn = BayesNetwork()
+    bn.add_node("Burglary", [], {(): 0.02})
+    bn.add_node("Earthquake", [], {(): 0.05})
+    bn.add_node("Alarm", ["Burglary", "Earthquake"], {
+        (True, True): 0.95,
+        (True, False): 0.94,
+        (False, True): 0.29,
+        (False, False): 0.001
+    })
+    bn.add_node("JohnCalls", ["Alarm"], {
+        (True,): 0.90,
+        (False,): 0.05
+    })
+    bn.add_node("MaryCalls", ["Alarm"], {
+        (True,): 0.70,
+        (False,): 0.01
+    })
+    return bn
+
