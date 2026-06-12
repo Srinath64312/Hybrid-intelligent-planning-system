@@ -11,48 +11,56 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Theme variables - Default Dark (Midnight Violet) Theme */
+  /* Theme variables - Default Dark (Midnight Cyberpunk / Violet) */
   color-scheme: dark;
-  --bg-color: #030307;
+  --bg-color: #030206;
   --text-color: #f1f5f9;
-  --body-bg: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1), transparent 40%),
-             radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1), transparent 40%),
+  --body-bg: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.12), transparent 45%),
+             radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.12), transparent 45%),
              linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-             linear-gradient(135deg, #05040a 0%, #030307 40%, #0a081a 100%);
-  --panel-bg: rgba(10, 10, 18, 0.45);
-  --panel-hover-bg: rgba(14, 14, 26, 0.65);
+             linear-gradient(135deg, #050409 0%, #030307 40%, #080617 100%);
+  --panel-bg: rgba(10, 10, 20, 0.45);
+  --panel-hover-bg: rgba(14, 14, 28, 0.65);
   --panel-border: rgba(255, 255, 255, 0.06);
-  --panel-hover-border: rgba(255, 255, 255, 0.15);
+  --panel-hover-border: rgba(255, 255, 255, 0.16);
   --input-bg: rgba(0, 0, 0, 0.35);
   --input-border: rgba(255, 255, 255, 0.08);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --border-glow: rgba(124, 58, 237, 0.4);
+  --text-muted: #64748b;
+  --border-glow: rgba(139, 92, 246, 0.25);
   --btn-grad: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  --btn-hover-shadow: rgba(168, 85, 247, 0.4);
+  --btn-hover-shadow: rgba(168, 85, 247, 0.45);
+  
+  --accent-primary: #6366f1;
+  --accent-secondary: #a855f7;
 }
 
 :root.light {
   color-scheme: light;
   --bg-color: #f8fafc;
   --text-color: #0f172a;
-  --body-bg: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.06), transparent 45%),
-             radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.06), transparent 45%),
+  --body-bg: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.07), transparent 45%),
+             radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.07), transparent 45%),
              linear-gradient(to right, rgba(15, 23, 42, 0.02) 1px, transparent 1px),
              linear-gradient(to bottom, rgba(15, 23, 42, 0.02) 1px, transparent 1px),
              linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
   --panel-bg: rgba(255, 255, 255, 0.65);
   --panel-hover-bg: rgba(255, 255, 255, 0.85);
   --panel-border: rgba(15, 23, 42, 0.08);
-  --panel-hover-border: rgba(15, 23, 42, 0.16);
+  --panel-hover-border: rgba(15, 23, 42, 0.18);
   --input-bg: rgba(255, 255, 255, 0.85);
   --input-border: rgba(15, 23, 42, 0.12);
   --text-primary: #0f172a;
   --text-secondary: #334155;
-  --border-glow: rgba(99, 102, 241, 0.15);
+  --text-muted: #64748b;
+  --border-glow: rgba(99, 102, 241, 0.18);
   --btn-grad: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
   --btn-hover-shadow: rgba(79, 70, 229, 0.35);
+
+  --accent-primary: #4f46e5;
+  --accent-secondary: #9333ea;
 }
 
 :root {
@@ -66,8 +74,9 @@ body {
   min-height: 100vh;
   background: var(--body-bg);
   background-size: 100% 100%, 100% 100%, 35px 35px, 35px 35px, 200% 200%;
-  animation: gradientBG 20s ease infinite;
+  animation: gradientBG 22s ease infinite;
   color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 @keyframes gradientBG {
@@ -90,7 +99,7 @@ body {
     backdrop-filter: blur(40px);
     border: 1px solid var(--panel-border);
     border-radius: 1.25rem;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
     transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
@@ -103,15 +112,19 @@ body {
     left: 0;
     right: 0;
     height: 1.5px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
     z-index: 10;
+  }
+
+  :root.light .glass-panel::before {
+    background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.08), transparent);
   }
   
   .glass-panel:hover {
     background-color: var(--panel-hover-bg);
     border-color: var(--panel-hover-border);
-    box-shadow: 0 25px 45px -15px var(--border-glow);
-    transform: translateY(-0.2rem);
+    box-shadow: 0 20px 40px -12px var(--border-glow);
+    transform: translateY(-0.15rem);
   }
 
   .nav-btn {
@@ -119,11 +132,19 @@ body {
   }
   
   .nav-btn-active {
-    @apply bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.3)];
+    @apply bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.25)];
+  }
+
+  :root.light .nav-btn-active {
+    @apply bg-indigo-600/10 text-indigo-700 border border-indigo-600/40 shadow-[0_0_15px_rgba(79,70,229,0.15)];
   }
   
   .nav-btn-inactive {
     @apply text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent;
+  }
+
+  :root.light .nav-btn-inactive {
+    @apply text-slate-500 hover:text-slate-900 hover:bg-black/5 border border-transparent;
   }
 }
 
@@ -137,11 +158,12 @@ body {
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
+  transition: background-color 0.2s;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .btn {
@@ -160,8 +182,8 @@ body {
 }
 
 .btn:hover {
-  transform: translateY(-2.5px);
-  box-shadow: 0 12px 24px -10px var(--btn-hover-shadow);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -8px var(--btn-hover-shadow);
 }
 
 /* Typography Enhancements */
@@ -183,6 +205,12 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+:root.light .trace-box {
+  background: rgba(255, 255, 255, 0.8);
+  color: #065f46;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -199,9 +227,48 @@ input, select, textarea {
   font-family: 'Plus Jakarta Sans', sans-serif;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
+
 input:focus, select:focus, textarea:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 0 3px var(--border-glow);
+}
+
+/* Premium Custom Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type="range"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: var(--input-border);
+  border-radius: 3px;
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -5px;
+  box-shadow: 0 0 8px var(--border-glow);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-secondary);
 }
 
 @keyframes shimmer {
@@ -210,7 +277,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .animate-shimmer {
-  animation: shimmer 2s infinite linear;
+  animation: shimmer 2.2s infinite linear;
 }
 
 /* Light mode overrides for Tailwind text color utilities */
@@ -219,21 +286,22 @@ input:focus, select:focus, textarea:focus {
 :root.light .text-slate-300 { color: #334155 !important; }
 :root.light .text-slate-400 { color: #475569 !important; }
 :root.light .text-slate-500 { color: #64748b !important; }
+:root.light .text-slate-600 { color: #475569 !important; }
 :root.light .text-white { color: #0f172a !important; }
 :root.light .text-white\/60 { color: rgba(15, 23, 42, 0.6) !important; }
-:root.light .text-indigo-200 { color: #3730a3 !important; }
-:root.light .text-indigo-300 { color: #4338ca !important; }
-:root.light .text-indigo-400 { color: #4f46e5 !important; }
-:root.light .text-blue-300 { color: #1d4ed8 !important; }
-:root.light .text-blue-400 { color: #2563eb !important; }
-:root.light .text-purple-300 { color: #6b21a8 !important; }
-:root.light .text-purple-400 { color: #7e22ce !important; }
-:root.light .text-emerald-300 { color: #047857 !important; }
-:root.light .text-emerald-400 { color: #065f46 !important; }
-:root.light .text-amber-300 { color: #b45309 !important; }
-:root.light .text-amber-400 { color: #92400e !important; }
-:root.light .text-rose-300 { color: #be123c !important; }
-:root.light .text-rose-400 { color: #9f1239 !important; }
+:root.light .text-indigo-200 { color: #312e81 !important; }
+:root.light .text-indigo-300 { color: #3730a3 !important; }
+:root.light .text-indigo-400 { color: #4338ca !important; }
+:root.light .text-blue-300 { color: #1e3a8a !important; }
+:root.light .text-blue-400 { color: #1d4ed8 !important; }
+:root.light .text-purple-300 { color: #581c87 !important; }
+:root.light .text-purple-400 { color: #6b21a8 !important; }
+:root.light .text-emerald-300 { color: #064e3b !important; }
+:root.light .text-emerald-400 { color: #047857 !important; }
+:root.light .text-amber-300 { color: #78350f !important; }
+:root.light .text-amber-400 { color: #b45309 !important; }
+:root.light .text-rose-300 { color: #881337 !important; }
+:root.light .text-rose-400 { color: #be123c !important; }
 
 /* Light mode overrides for Tailwind background utilities */
 :root.light .bg-slate-950 { background-color: #cbd5e1 !important; }
@@ -250,7 +318,33 @@ input:focus, select:focus, textarea:focus {
 :root.light .border-slate-800 { border-color: #cbd5e1 !important; }
 :root.light .border-slate-700 { border-color: #cbd5e1 !important; }
 
-/* Light mode scrollbar */
+/* Dynamic Light Mode Presets & Context Background Adaptations */
+:root.light .bg-indigo-950\/20 { background-color: rgba(79, 70, 229, 0.05) !important; }
+:root.light .bg-indigo-950\/10 { background-color: rgba(79, 70, 229, 0.03) !important; }
+:root.light .bg-indigo-500\/20 { background-color: rgba(79, 70, 229, 0.1) !important; }
+:root.light .bg-emerald-950\/5 { background-color: rgba(16, 185, 129, 0.04) !important; }
+:root.light .bg-emerald-950\/10 { background-color: rgba(16, 185, 129, 0.07) !important; }
+:root.light .bg-emerald-500\/5 { background-color: rgba(16, 185, 129, 0.04) !important; }
+:root.light .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.07) !important; }
+:root.light .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.15) !important; }
+:root.light .bg-amber-500\/5 { background-color: rgba(245, 158, 11, 0.04) !important; }
+:root.light .bg-amber-500\/10 { background-color: rgba(245, 158, 11, 0.07) !important; }
+:root.light .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.15) !important; }
+:root.light .bg-indigo-950\/5 { background-color: rgba(79, 70, 229, 0.03) !important; }
+:root.light .bg-indigo-950 { background-color: #cbd5e1 !important; }
+:root.light .bg-indigo-900 { background-color: #cbd5e1 !important; }
+:root.light .bg-indigo-900\/50 { background-color: rgba(79, 70, 229, 0.1) !important; }
+:root.light .bg-indigo-900\/30 { background-color: rgba(79, 70, 229, 0.06) !important; }
+:root.light .bg-indigo-950\/50 { background-color: rgba(79, 70, 229, 0.15) !important; }
+:root.light .bg-indigo-950\/70 { background-color: rgba(79, 70, 229, 0.2) !important; }
+:root.light .bg-slate-600\/50 { background-color: rgba(15, 23, 42, 0.08) !important; }
+:root.light .bg-slate-800\/60 { background-color: rgba(15, 23, 42, 0.12) !important; }
+:root.light .bg-purple-600\/40 { background-color: rgba(139, 92, 246, 0.15) !important; }
+:root.light .bg-purple-700\/40 { background-color: rgba(139, 92, 246, 0.2) !important; }
+:root.light .bg-indigo-500\/5 { background-color: rgba(79, 70, 229, 0.03) !important; }
+:root.light .bg-indigo-500\/10 { background-color: rgba(79, 70, 229, 0.07) !important; }
+
+/* Light mode scrollbar overrides */
 :root.light .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(15, 23, 42, 0.15);
 }
