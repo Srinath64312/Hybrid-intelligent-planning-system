@@ -8,11 +8,56 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+
+  <!-- SPA Redirect Handler for GitHub Pages -->
+  <script type="text/javascript">
+    (function(l) {
+      if (l.search[1] === '/' ) {
+        var decoded = l.search.slice(1).split('&').map(function(s) {
+          return s.replace(/~and~/g, '&')
+        }).join('?');
+        window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+        );
+      }
+    }(window.location));
+  </script>
+
+  <!-- Primary SEO Metadata -->
   <title>HIPS Platform - Hybrid Intelligent Planning System</title>
+  <meta name="title" content="HIPS Platform - Hybrid Intelligent Planning System" />
+  <meta name="description" content="HIPS (Hybrid Intelligent Planning System) is a high-fidelity visual sandbox for executing, debugging, and comparing intelligent algorithms (Pathfinding Search, CSPs, Game AI, Bayesian Inference, and Expert Systems) natively in the browser via Pyodide WebAssembly." />
+  <meta name="keywords" content="Artificial Intelligence, Intelligent Agents, Pathfinding, A*, CSP, N-Queens, Minimax, Bayesian Network, Pyodide, WebAssembly, React" />
+  <meta name="author" content="Srinath64312" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://srinath64312.github.io/Hybrid-intelligent-planning-system/" />
+  <meta property="og:title" content="HIPS Platform - Hybrid Intelligent Planning System" />
+  <meta property="og:description" content="An interactive, high-fidelity WebAssembly-powered algorithm playground for Search, CSPs, Game AI, and Bayesian Suite." />
+  <meta property="og:image" content="https://srinath64312.github.io/Hybrid-intelligent-planning-system/favicon.svg" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://srinath64312.github.io/Hybrid-intelligent-planning-system/" />
+  <meta property="twitter:title" content="HIPS Platform - Hybrid Intelligent Planning System" />
+  <meta property="twitter:description" content="An interactive, high-fidelity WebAssembly-powered algorithm playground for Search, CSPs, Game AI, and Bayesian Suite." />
+  <meta property="twitter:image" content="https://srinath64312.github.io/Hybrid-intelligent-planning-system/favicon.svg" />
+
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
 </head>
 
 <body>
+  <noscript>
+    <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; text-align: center; padding: 50px 20px; color: #f1f5f9; background: #030206; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
+      <div style="background: rgba(10, 10, 20, 0.45); backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.06); max-width: 500px; width: 100%; padding: 40px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+        <h2 style="color: #ef4444; margin-top: 0; margin-bottom: 20px; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.025em;">JavaScript is Required</h2>
+        <p style="line-height: 1.6; color: #94a3b8; font-size: 0.95rem; margin-bottom: 0;">
+          The Hybrid Intelligent Planning System (HIPS) platform runs Python algorithms directly in your browser via Pyodide WebAssembly, which requires JavaScript to be enabled. Please enable JavaScript in your browser settings to continue.
+        </p>
+      </div>
+    </div>
+  </noscript>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

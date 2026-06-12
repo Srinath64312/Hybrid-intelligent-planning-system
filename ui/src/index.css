@@ -385,3 +385,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 :root.light .hover\:text-white:hover { color: #0f172a !important; }
 :root.light .hover\:text-slate-200:hover { color: #1e293b !important; }
 
+/* Accessibility Focus States */
+button:focus-visible, 
+a:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent-secondary) !important;
+  outline-offset: 2px !important;
+}
+
