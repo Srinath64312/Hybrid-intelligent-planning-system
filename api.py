@@ -245,51 +245,11 @@ def generate_timetable_api():
         days_per_week = int(config.get("days_per_week", 5))
         solver_choice = config.get("solver", "Backtracking (MRV+FC)")
 
-        # Deep copy to avoid polluting the original data references
-        import copy
-        courses_sim = copy.deepcopy(courses)
-        teachers_sim = copy.deepcopy(teachers)
-        rooms_sim = copy.deepcopy(rooms)
-        groups_sim = copy.deepcopy(groups)
-
-        # Inject Free Periods to guarantee no empty spaces
-        total_slots = periods_per_day * days_per_week
-        group_total = {g["name"]: 0 for g in groups_sim}
-        for c in courses_sim:
-            c_groups = c.get("groups", [])
-            if not c_groups:
-                c_groups = [g["name"] for g in groups_sim if c.get("name") in g.get("courses", [])]
-            for g in c_groups:
-                if g in group_total:
-                    group_total[g] += c.get("periods_required", 1)
-
-        for g_name, total in group_total.items():
-            shortfall = total_slots - total
-            if shortfall > 0:
-                dummy_teacher = f"Self-Study ({g_name})"
-                teachers_sim.append({
-                    "name": dummy_teacher,
-                    "max_periods_per_day": periods_per_day,
-                    "availability": []
-                })
-                dummy_room = f"Study Hall ({g_name})"
-                rooms_sim.append({
-                    "name": dummy_room,
-                    "capacity": 999,
-                    "type": "Open Area"
-                })
-                courses_sim.append({
-                    "name": f"Free Period",
-                    "teacher": dummy_teacher,
-                    "periods_required": shortfall,
-                    "groups": [g_name]
-                })
-
         problem = TimetableProblem(
-            courses=courses_sim,
-            teachers=teachers_sim,
-            rooms=rooms_sim,
-            groups=groups_sim,
+            courses=courses,
+            teachers=teachers,
+            rooms=rooms,
+            groups=groups,
             periods_per_day=periods_per_day,
             days_per_week=days_per_week
         )
@@ -329,6 +289,17 @@ def generate_timetable_api():
                         "groups": c_groups,
                         "room": room
                     }
+
+        # POST-PROCESSING: Fill empty spaces with Free Periods for all cohorts
+        for gname, grid in group_timetables.items():
+            for d in range(days_per_week):
+                for p in range(periods_per_day):
+                    if grid[d][p] is None:
+                        grid[d][p] = {
+                            "course": "Free Period",
+                            "teacher": "Self-Study",
+                            "room": "Study Hall"
+                        }
 
         # Cache data for export
         last_timetable_data = {
