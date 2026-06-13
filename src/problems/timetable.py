@@ -40,17 +40,6 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
                 c_groups = [g["name"] for g in groups if c_name in g.get("courses", [])]
             self.course_groups[c_name] = c_groups
 
-        # Calculate max daily periods per cohort to enforce balanced schedules
-        self.group_max_daily_periods = {g["name"]: 0 for g in groups}
-        for c in courses:
-            c_name = c["name"]
-            periods = c.get("periods_required", 1)
-            for g in self.course_groups.get(c_name, []):
-                if g in self.group_max_daily_periods:
-                    self.group_max_daily_periods[g] += periods
-        for g in self.group_max_daily_periods:
-            self.group_max_daily_periods[g] = math.ceil(self.group_max_daily_periods[g] / self.days_per_week)
-
         # Build variables list
         variables = []
         for c in courses:
@@ -138,9 +127,6 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
         if t_count >= max_periods:
             return False
 
-        # 2. Student group max daily load check
-        group_daily_counts = {g: 1 for g in groups}
-
         # Compare with other assigned variables
         for other_var, other_val in assignment.items():
             other_cname, other_pidx = other_var
@@ -148,14 +134,6 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
             other_info = self.course_map[other_cname]
             other_teacher = other_info.get("teacher")
             other_groups = self.course_groups.get(other_cname, [])
-
-            # Check if this assignment is on the same day for any of our groups
-            if day == other_day:
-                for g in groups:
-                    if g in other_groups:
-                        group_daily_counts[g] += 1
-                        if group_daily_counts[g] > self.group_max_daily_periods.get(g, self.periods_per_day):
-                            return False
 
             # Same period constraints
             if day == other_day and period == other_period:
@@ -274,9 +252,6 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
                 "reason": f"Teacher {teacher} load is within daily limit ({t_count + 1}/{max_periods})."
             })
 
-        # 2. Student group max daily load check
-        group_daily_counts = {g: 1 for g in groups}
-
         # Overlaps with other courses
         for other_var, other_val in assignment.items():
             other_cname, other_pidx = other_var
@@ -284,21 +259,6 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
             other_info = self.course_map[other_cname]
             other_teacher = other_info.get("teacher")
             other_groups = self.course_groups.get(other_cname, [])
-
-            if day == other_day:
-                # Count daily periods for groups
-                for g in groups:
-                    if g in other_groups:
-                        group_daily_counts[g] += 1
-                        g_max = self.group_max_daily_periods.get(g, self.periods_per_day)
-                        if group_daily_counts[g] > g_max:
-                            passed_all = False
-                            details.append({
-                                "name": "Cohort Daily Load",
-                                "passed": False,
-                                "weight": 0.2,
-                                "reason": f"Cohort {g} would exceed max load of {g_max} periods on Day {day}."
-                            })
 
             if day == other_day and period == other_period:
                 if teacher == other_teacher:
