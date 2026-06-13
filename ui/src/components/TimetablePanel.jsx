@@ -87,6 +87,41 @@ export default function TimetablePanel() {
   const [jsonError, setJsonError] = useState(null);
   const [hoveredCourse, setHoveredCourse] = useState(null);
 
+  // New Item States
+  const [newTeacherName, setNewTeacherName] = useState("");
+  const [newTeacherPeriods, setNewTeacherPeriods] = useState(4);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupCapacity, setNewGroupCapacity] = useState(30);
+  const [newGroupCourses, setNewGroupCourses] = useState("");
+
+  const handleAddTeacher = () => {
+    if (!newTeacherName.trim()) return;
+    const newTeacher = { name: newTeacherName.trim(), max_periods_per_day: newTeacherPeriods, availability: [] };
+    const updated = [...teachers, newTeacher];
+    setTeachers(updated);
+    setNewTeacherName("");
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.teachers = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
+
+  const handleAddGroup = () => {
+    if (!newGroupName.trim()) return;
+    const cList = newGroupCourses.split(',').map(c => c.trim()).filter(c => c);
+    const newGroup = { name: newGroupName.trim(), capacity: newGroupCapacity, courses: cList };
+    const updated = [...groups, newGroup];
+    setGroups(updated);
+    setNewGroupName("");
+    setNewGroupCourses("");
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.groups = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
+
   useEffect(() => {
     pythonRunner.getPeas('Timetable')
       .then(data => setPeas(data))
@@ -348,24 +383,47 @@ export default function TimetablePanel() {
                   <span className="text-slate-500">{c.teacher} · {c.periods_required} periods</span>
                 </div>
               ))}
-              {activeInputTab === "teachers" && teachers.map((t, i) => (
-                <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                  <span className="text-slate-300 font-bold">{t.name}</span>
-                  <span className="text-slate-500">Max {t.max_periods_per_day}/day · {t.availability ? t.availability.length : 'Any'} slots</span>
+              {activeInputTab === "teachers" && (
+                <div className="flex flex-col gap-1">
+                  {teachers.map((t, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
+                      <span className="text-slate-300 font-bold">{t.name}</span>
+                      <span className="text-slate-500">Max {t.max_periods_per_day}/day · {t.availability && t.availability.length > 0 ? t.availability.length : 'Any'} slots</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
+                    <input type="text" value={newTeacherName} onChange={e => setNewTeacherName(e.target.value)} placeholder="Teacher Name" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                    <input type="number" min="1" max="10" value={newTeacherPeriods} onChange={e => setNewTeacherPeriods(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Max Periods/Day" />
+                    <button onClick={handleAddTeacher} className="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 px-2 py-1 rounded font-bold transition-colors">+</button>
+                  </div>
                 </div>
-              ))}
+              )}
               {activeInputTab === "rooms" && rooms.map((r, i) => (
                 <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
                   <span className="text-slate-300 font-bold">{r.name} ({r.type})</span>
                   <span className="text-slate-500">Cap: {r.capacity}</span>
                 </div>
               ))}
-              {activeInputTab === "groups" && groups.map((g, i) => (
-                <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                  <span className="text-slate-300 font-bold">{g.name} (Cap: {g.capacity})</span>
-                  <span className="text-slate-500">{g.courses.length} courses</span>
+              {activeInputTab === "groups" && (
+                <div className="flex flex-col gap-1">
+                  {groups.map((g, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
+                      <span className="text-slate-300 font-bold">{g.name} <span className="text-slate-500 font-normal">(Cap: {g.capacity})</span></span>
+                      <span className="text-slate-500">{g.courses.length} courses</span>
+                    </div>
+                  ))}
+                  <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="Cohort Name" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                      <input type="number" min="1" value={newGroupCapacity} onChange={e => setNewGroupCapacity(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Capacity" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="text" value={newGroupCourses} onChange={e => setNewGroupCourses(e.target.value)} placeholder="Courses (comma separated, e.g., CS101, Sports)" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                      <button onClick={handleAddGroup} className="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 px-2 py-1 rounded font-bold transition-colors">Add</button>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* JSON Text Editor for bulk changes */}
