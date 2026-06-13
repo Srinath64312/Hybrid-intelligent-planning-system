@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, Home, Loader2, AlertTriangle, Sun, Moon, Menu, X } from 'lucide-react'
+import { Brain, Grid, CalendarDays, Gamepad2, Activity, Lightbulb, Home, Loader2, AlertTriangle, Menu, X } from 'lucide-react'
 import { pythonRunner } from './pythonRunner'
 import SearchPanel from './components/SearchPanel'
 import CspPanel from './components/CspPanel'
@@ -15,7 +15,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
 function App() {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
   const [pyStatus, setPyStatus] = useState('initializing')
   const [pyStatusMessage, setPyStatusMessage] = useState('Loading Python WebAssembly runtime...')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -26,18 +25,9 @@ function App() {
   }, [location])
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light');
-    } else {
-      root.classList.remove('light');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  }
+    document.documentElement.classList.remove('light');
+    localStorage.setItem('theme', 'dark');
+  }, []);
 
   useEffect(() => {
     pythonRunner.initialize((msg) => {
@@ -192,22 +182,7 @@ function App() {
           ))}
         </div>
         <div className="flex-grow" />
-        <button 
-          onClick={toggleTheme} 
-          className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-slate-800/40 text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all cursor-pointer font-semibold w-full mt-4 shrink-0 focus-visible:outline-2 focus-visible:outline-indigo-500"
-        >
-          {theme === 'dark' ? (
-            <>
-              <Sun size={18} className="text-amber-400 shrink-0" />
-              <span>Light Mode</span>
-            </>
-          ) : (
-            <>
-              <Moon size={18} className="text-indigo-400 shrink-0" />
-              <span>Dark Mode</span>
-            </>
-          )}
-        </button>
+
       </motion.div>
 
       {/* Main Content Area */}
