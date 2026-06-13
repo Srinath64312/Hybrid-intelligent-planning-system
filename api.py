@@ -301,6 +301,17 @@ def generate_timetable_api():
                             "room": "Study Hall"
                         }
 
+        # POST-PROCESSING: Fill empty spaces for teachers with Planning
+        for tname, grid in teacher_timetables.items():
+            for d in range(days_per_week):
+                for p in range(periods_per_day):
+                    if grid[d][p] is None:
+                        grid[d][p] = {
+                            "course": "Planning / Office Hours",
+                            "groups": [],
+                            "room": "Staff Room"
+                        }
+
         # Cache data for export
         last_timetable_data = {
             "assignment": serialized_assignment,

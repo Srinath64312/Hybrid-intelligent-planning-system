@@ -487,6 +487,17 @@ for gname, grid in group_timetables.items():
                     "room": "Study Hall"
                 }
 
+# POST-PROCESSING: Fill empty spaces for teachers with Planning
+for tname, grid in teacher_timetables.items():
+    for d in range(days_per_week):
+        for p in range(periods_per_day):
+            if grid[d][p] is None:
+                grid[d][p] = {
+                    "course": "Planning / Office Hours",
+                    "groups": [],
+                    "room": "Staff Room"
+                }
+
 res_dict = {
     "solved": result.solved,
     "assignment": serialized_assignment,

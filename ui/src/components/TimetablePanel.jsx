@@ -88,11 +88,41 @@ export default function TimetablePanel() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
 
   // New Item States
+  const [newCourseName, setNewCourseName] = useState("");
+  const [newCourseTeacher, setNewCourseTeacher] = useState("");
+  const [newCoursePeriods, setNewCoursePeriods] = useState(3);
+  const [newCourseGroups, setNewCourseGroups] = useState("");
+  const [newCourseIsLab, setNewCourseIsLab] = useState(false);
+
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherPeriods, setNewTeacherPeriods] = useState(4);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCapacity, setNewGroupCapacity] = useState(30);
   const [newGroupCourses, setNewGroupCourses] = useState("");
+
+  const handleAddCourse = () => {
+    if (!newCourseName.trim() || !newCourseTeacher.trim()) return;
+    const gList = newCourseGroups.split(',').map(g => g.trim()).filter(g => g);
+    const newCourse = { 
+      name: newCourseName.trim(), 
+      teacher: newCourseTeacher.trim(), 
+      periods_required: newCoursePeriods, 
+      groups: gList 
+    };
+    if (newCourseIsLab) newCourse.is_lab = true;
+    
+    const updated = [...courses, newCourse];
+    setCourses(updated);
+    setNewCourseName("");
+    setNewCourseTeacher("");
+    setNewCourseGroups("");
+    setNewCourseIsLab(false);
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.courses = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
 
   const handleAddTeacher = () => {
     if (!newTeacherName.trim()) return;
@@ -377,12 +407,30 @@ export default function TimetablePanel() {
 
             {/* List Preview */}
             <div className="flex-1 overflow-y-auto max-h-[200px] border border-white/5 bg-black/25 rounded-xl p-3 text-xs leading-relaxed custom-scrollbar">
-              {activeInputTab === "courses" && courses.map((c, i) => (
-                <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                  <span className="text-slate-300 font-bold">{c.name} {c.is_lab && <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 py-0.2 rounded font-normal">Lab</span>}</span>
-                  <span className="text-slate-500">{c.teacher} · {c.periods_required} periods</span>
+              {activeInputTab === "courses" && (
+                <div className="flex flex-col gap-1">
+                  {courses.map((c, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
+                      <span className="text-slate-300 font-bold">{c.name} {c.is_lab && <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 py-0.2 rounded font-normal">Lab</span>}</span>
+                      <span className="text-slate-500">{c.teacher} · {c.periods_required} periods</span>
+                    </div>
+                  ))}
+                  <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <input type="text" value={newCourseName} onChange={e => setNewCourseName(e.target.value)} placeholder="Course Name" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                      <input type="text" value={newCourseTeacher} onChange={e => setNewCourseTeacher(e.target.value)} placeholder="Teacher Name" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="number" min="1" value={newCoursePeriods} onChange={e => setNewCoursePeriods(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Periods Required" />
+                      <input type="text" value={newCourseGroups} onChange={e => setNewCourseGroups(e.target.value)} placeholder="Cohorts (e.g., CS-CohortA)" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                      <label className="flex items-center gap-1 text-slate-400 text-[10px] cursor-pointer">
+                        <input type="checkbox" checked={newCourseIsLab} onChange={e => setNewCourseIsLab(e.target.checked)} className="accent-indigo-500" /> Lab
+                      </label>
+                      <button onClick={handleAddCourse} className="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 px-2 py-1 rounded font-bold transition-colors">Add</button>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              )}
               {activeInputTab === "teachers" && (
                 <div className="flex flex-col gap-1">
                   {teachers.map((t, i) => (
