@@ -333,7 +333,7 @@ export default function BayesPanel() {
                 <defs>
                   {/* Arrow markers for edges */}
                   <marker id="arrow" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#6366f1" />
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--svg-node-link)" />
                   </marker>
                   
                   {/* Glowing effects */}
@@ -356,7 +356,7 @@ export default function BayesPanel() {
                       key={idx}
                       x1={fromNode.x} y1={fromNode.y} 
                       x2={toNode.x} y2={toNode.y} 
-                      stroke="#6366f1" strokeWidth="2.5" markerEnd="url(#arrow)"
+                      stroke="var(--svg-node-link)" strokeWidth="2.5" markerEnd="url(#arrow)"
                     />
                   );
                 })}
@@ -369,7 +369,7 @@ export default function BayesPanel() {
                   const isFalseEv = evidence[name] === false;
                   
                   let glowColor = 'transparent';
-                  let strokeColor = '#475569';
+                  let strokeColor = 'var(--svg-node-border)';
                   if (isSelected) strokeColor = '#818cf8';
                   if (isQuery) { strokeColor = '#f59e0b'; glowColor = '#f59e0b'; }
                   else if (isTrueEv) { strokeColor = '#10b981'; }
@@ -390,7 +390,7 @@ export default function BayesPanel() {
                       {/* Main Circle */}
                       <circle 
                         r={30} 
-                        fill={isTrueEv ? 'rgba(16, 185, 129, 0.15)' : isFalseEv ? 'rgba(239, 68, 68, 0.15)' : 'rgba(15, 23, 42, 0.8)'}
+                        fill={isTrueEv ? 'rgba(16, 185, 129, 0.15)' : isFalseEv ? 'rgba(239, 68, 68, 0.15)' : 'var(--svg-node-bg)'}
                         stroke={strokeColor} 
                         strokeWidth={isSelected || isQuery ? 3.5 : 2} 
                         className="transition-all duration-300"
@@ -400,7 +400,7 @@ export default function BayesPanel() {
                       <text 
                         textAnchor="middle" 
                         alignmentBaseline="middle" 
-                        fill="#f8fafc" 
+                        fill="var(--svg-node-text)" 
                         className="text-xs font-bold pointer-events-none"
                         y={-2}
                       >
