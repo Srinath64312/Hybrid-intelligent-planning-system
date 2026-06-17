@@ -428,9 +428,12 @@ export default function TimetablePanel() {
               {activeInputTab === "courses" && (
                 <div className="flex flex-col gap-1">
                   {courses.map((c, i) => (
-                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                      <span className="text-slate-300 font-bold">{c.name} {c.is_lab && <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 py-0.2 rounded font-normal">Lab</span>}</span>
-                      <span className="text-slate-500">{c.teacher} · {c.periods_required} periods</span>
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0 items-center group">
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 font-bold">{c.name} {c.is_lab && <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 py-0.2 rounded font-normal">Lab</span>}</span>
+                        <span className="text-slate-500 text-[10px]">{c.teacher} · {c.periods_required} periods</span>
+                      </div>
+                      <button onClick={() => handleDeleteCourse(i)} className="text-red-400/50 hover:text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100">x</button>
                     </div>
                   ))}
                   <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10">
@@ -452,9 +455,12 @@ export default function TimetablePanel() {
               {activeInputTab === "teachers" && (
                 <div className="flex flex-col gap-1">
                   {teachers.map((t, i) => (
-                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                      <span className="text-slate-300 font-bold">{t.name}</span>
-                      <span className="text-slate-500">Max {t.max_periods_per_day}/day · {t.availability && t.availability.length > 0 ? t.availability.length : 'Any'} slots</span>
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0 items-center group">
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 font-bold">{t.name}</span>
+                        <span className="text-slate-500 text-[10px]">Max {t.max_periods_per_day}/day · {t.availability && t.availability.length > 0 ? t.availability.length : 'Any'} slots</span>
+                      </div>
+                      <button onClick={() => handleDeleteTeacher(i)} className="text-red-400/50 hover:text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100">x</button>
                     </div>
                   ))}
                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
@@ -473,9 +479,12 @@ export default function TimetablePanel() {
               {activeInputTab === "groups" && (
                 <div className="flex flex-col gap-1">
                   {groups.map((g, i) => (
-                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                      <span className="text-slate-300 font-bold">{g.name} <span className="text-slate-500 font-normal">(Cap: {g.capacity})</span></span>
-                      <span className="text-slate-500">{g.courses.length} courses</span>
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0 items-center group">
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 font-bold">{g.name} <span className="text-slate-500 font-normal">(Cap: {g.capacity})</span></span>
+                        <span className="text-slate-500 text-[10px]">{g.courses.length} courses</span>
+                      </div>
+                      <button onClick={() => handleDeleteGroup(i)} className="text-red-400/50 hover:text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100">x</button>
                     </div>
                   ))}
                   <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10">
