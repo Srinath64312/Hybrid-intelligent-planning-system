@@ -13,10 +13,9 @@ data = {
     {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB"]},
     {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB"]},
     {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
-    
-    # NEW COURSES FOR NEW TEACHER & COHORT
-    {"name": "Advanced AI", "teacher": "Prof. Xavier", "periods_required": 5, "groups": ["AI-Cohort"]},
-    {"name": "Neural Networks", "teacher": "Prof. Xavier", "periods_required": 4, "groups": ["AI-Cohort"]}
+    {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
+    {"name": "CFAI", "teacher": "Prof. Jones", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
+    {"name": "Foreign Language", "teacher": "Mme. Dupont", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]}
   ],
   "teachers": [
     {
@@ -44,10 +43,18 @@ data = {
       "max_periods_per_day": 6,
       "availability": []
     },
-    
-    # NEW TEACHER
     {
-      "name": "Prof. Xavier",
+      "name": "Prof. Smith",
+      "max_periods_per_day": 4,
+      "availability": []
+    },
+    {
+      "name": "Prof. Jones",
+      "max_periods_per_day": 4,
+      "availability": []
+    },
+    {
+      "name": "Mme. Dupont",
       "max_periods_per_day": 4,
       "availability": []
     }
@@ -60,11 +67,8 @@ data = {
     {"name": "Library", "capacity": 100, "type": "Study Area"}
   ],
   "groups": [
-    {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study"]},
-    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study"]},
-    
-    # NEW COHORT
-    {"name": "AI-Cohort", "capacity": 20, "courses": ["Advanced AI", "Neural Networks"]}
+    {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
+    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
   ],
   "config": {
     "periods_per_day": 6,

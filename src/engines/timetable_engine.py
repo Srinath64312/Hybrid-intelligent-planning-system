@@ -74,19 +74,9 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
         mrv_vars = sorted(mrv_vars, key=get_degree, reverse=True)
         first = mrv_vars[0]
 
-        # LCV: Least Constraining Value
-        def count_conflicts(val):
-            conflicts = 0
-            test_assign = assignment.copy()
-            test_assign[first] = val
-            for u in unassigned:
-                if u != first:
-                    for d in current_domains[u]:
-                        if not problem.is_consistent(u, d, test_assign):
-                            conflicts += 1
-            return conflicts
-
-        sorted_values = sorted(current_domains[first], key=count_conflicts)
+        # Since domain is already randomized in __init__, we can just use it directly.
+        # Computing LCV in Python takes O(V * D^2) which causes massive freezing.
+        sorted_values = current_domains[first]
 
         for value in sorted_values:
             result.assignments_tried += 1
