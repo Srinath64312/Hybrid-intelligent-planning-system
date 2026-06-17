@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Tuple, Optional
 import math
+import random
 from src.core.problem import CSPProblem
 
 class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
@@ -98,6 +99,7 @@ class TimetableProblem(CSPProblem[Tuple[str, int], Tuple[int, int, str]]):
                         var_domain.append((day, period, r_name))
             
             # Sort or shuffle domain for heuristics (default sorted by day, period, room)
+            random.shuffle(var_domain)
             domains[var] = var_domain
 
         super().__init__(variables, domains)
