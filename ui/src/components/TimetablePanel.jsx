@@ -12,6 +12,8 @@ const SAMPLE_TIMETABLE_DATA = {
     {"name": "CS-Lab101", "teacher": "Dr. Alice", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortC"], "is_lab": true},
     {"name": "CS201", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortB"]},
     {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB", "EE-CohortA"]},
+    {"name": "EE101", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["EE-CohortA"]},
+    {"name": "EE102", "teacher": "Dr. Alice", "periods_required": 3, "groups": ["EE-CohortA"]},
     {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
     {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
     {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
@@ -75,7 +77,7 @@ const SAMPLE_TIMETABLE_DATA = {
     {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
     {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
     {"name": "CS-CohortC", "capacity": 40, "courses": ["CS101", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
-    {"name": "EE-CohortA", "capacity": 30, "courses": ["MATH101", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
+    {"name": "EE-CohortA", "capacity": 30, "courses": ["MATH101", "MATH201", "EE101", "EE102", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
   ],
   "config": {
     "periods_per_day": 6,

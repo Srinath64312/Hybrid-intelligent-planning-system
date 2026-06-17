@@ -83,7 +83,7 @@ data = {
   }
 }
 
-print(f"Testing Default Dataset")
+print(f"========================================\nTesting Default Dataset (Latest)\n========================================")
 start_t = time.time()
 problem = TimetableProblem(
     courses=data["courses"],
@@ -102,7 +102,19 @@ print(f"Assignments tried: {result.assignments_tried}")
 print(f"Backtracks: {result.backtracks}")
 print(f"Unscheduled Courses: {len(result.unscheduled)}")
 
-if result.unscheduled:
-    print("Reasons for unscheduled:")
-    for u in result.unscheduled:
-        print(f"  - {u['course']}: {u['reason']}")
+if result.solved:
+    print(f"\nAll 11 complex classes and 4 cohorts scheduled perfectly with ZERO conflicts.\n")
+    
+    # Process assignment for CohortC as an example
+    cohort_c_schedule = {d: {p: "Free Period" for p in range(6)} for d in range(5)}
+    
+    for var, val in result.assignment.items():
+        c_name, p_idx = var
+        day, period, room = val
+        if "CS-CohortC" in problem.course_groups.get(c_name, []):
+            cohort_c_schedule[day][period] = f"{c_name} ({room})"
+            
+    print(f"--- Sample View: CS-CohortC ---")
+    for d in range(5):
+        day_str = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][d]
+        print(f"{day_str}: {list(cohort_c_schedule[d].values())}")
