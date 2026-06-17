@@ -38,8 +38,7 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
         
         # Record trace / visited sequence for visualization
         result.visited_sequence.append({
-            "assignment": {f"{var[0]}_{var[1]}": val for var, val in assignment.items()},
-            "domains": {f"{var[0]}_{var[1]}": list(d) for var, d in current_domains.items()}
+            "assignment": {f"{var[0]}_{var[1]}": val for var, val in assignment.items()}
         })
 
         if len(assignment) > len(best_assignment):
@@ -80,19 +79,10 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
 
         for value in sorted_values:
             result.assignments_tried += 1
-            
-            # Explainability report evaluation
-            eval_report = problem.evaluate_constraints(first, value, assignment)
-            report_entry = {
-                "variable": f"{first[0]}_{first[1]}",
-                "value": value,
-                "probability": eval_report["probability"],
-                "details": eval_report["details"],
-                "passed": eval_report["passed"]
-            }
-            result.explainability_reports.append(report_entry)
+            # Use fast consistency check instead of expensive explainability evaluation for every node
+            is_valid = problem.is_consistent(first, value, assignment)
 
-            if eval_report["passed"]:
+            if is_valid:
                 result.trace.append(f"Assigned {value} to {first[0]} (Period {first[1]})")
                 local_assignment = assignment.copy()
                 local_assignment[first] = value
@@ -118,13 +108,10 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
                 result.trace.append(f"Backtracking from {first[0]} (Period {first[1]}) = {value}")
                 result.backtracks += 1
                 result.visited_sequence.append({
-                    "assignment": {f"{var[0]}_{var[1]}": val for var, val in assignment.items()},
-                    "domains": {f"{var[0]}_{var[1]}": list(d) for var, d in current_domains.items()}
+                    "assignment": {f"{var[0]}_{var[1]}": val for var, val in assignment.items()}
                 })
             else:
-                reasons = [d["reason"] for d in eval_report.get("details", []) if not d.get("passed", True)]
-                reason_str = " | ".join(reasons) if reasons else "Constraint Failed"
-                result.trace.append(f"Violation: Cannot assign {value} to {first[0]} (Period {first[1]}). Reasons: {reason_str}")
+                result.trace.append(f"Violation: Cannot assign {value} to {first[0]} (Period {first[1]}).")
 
         return None
 
