@@ -6,82 +6,41 @@ import { pythonRunner } from '../pythonRunner'
 // Sample data matching timetable_sample.json
 const SAMPLE_TIMETABLE_DATA = {
   "courses": [
-    {"name": "CS101", "teacher": "Dr. Alice", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortC"]},
-    {"name": "CS102", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortA"]},
-    {"name": "MATH101", "teacher": "Prof. Carol", "periods_required": 4, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
-    {"name": "CS-Lab101", "teacher": "Dr. Alice", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortC"], "is_lab": true},
-    {"name": "CS201", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortB"]},
-    {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB", "EE-CohortA"]},
-    {"name": "EE101", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["EE-CohortA"]},
-    {"name": "EE102", "teacher": "Dr. Alice", "periods_required": 3, "groups": ["EE-CohortA"]},
-    {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
-    {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
-    {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
-    {"name": "CFAI", "teacher": "Prof. Jones", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
-    {"name": "Foreign Language", "teacher": "Mme. Dupont", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]}
+    {"name": "DSA-II", "teacher": "DR. A. MAHESH BABU", "periods_required": 8, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]},
+    {"name": "MFDSA", "teacher": "DR. NAGESH", "periods_required": 6, "groups": ["Section 1 (CS)", "Section 2 (CS)"]},
+    {"name": "MCS", "teacher": "DR. JITENDRA SHARMA", "periods_required": 6, "groups": ["Section 3 (EE)"]},
+    {"name": "CFAI", "teacher": "DR. Y. SUDARSHAN", "periods_required": 6, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]},
+    {"name": "FEDF/UI", "teacher": "DR. T. PRIYANKA", "periods_required": 8, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]},
+    {"name": "JL (Japanese)", "teacher": "MS. SANDHYA", "periods_required": 5, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]},
+    {"name": "GLBPC", "teacher": "MR. SANDEEP CH", "periods_required": 7, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]},
+    {"name": "SPORTS / LIB", "teacher": "COACH / SELF", "periods_required": 2, "groups": ["Section 1 (CS)", "Section 2 (CS)", "Section 3 (EE)"]}
   ],
   "teachers": [
-    {
-      "name": "Dr. Alice",
-      "max_periods_per_day": 3,
-      "availability": [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 0], [3, 1], [3, 2], [4, 0], [4, 1], [4, 2]]
-    },
-    {
-      "name": "Dr. Bob",
-      "max_periods_per_day": 3,
-      "availability": [[0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 2], [2, 3], [2, 4], [3, 2], [3, 3], [3, 4], [4, 2], [4, 3], [4, 4]]
-    },
-    {
-      "name": "Prof. Carol",
-      "max_periods_per_day": 4,
-      "availability": [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 3], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5]]
-    },
-    {
-      "name": "Coach Dave",
-      "max_periods_per_day": 4,
-      "availability": []
-    },
-    {
-      "name": "Self-Study",
-      "max_periods_per_day": 6,
-      "availability": []
-    },
-    {
-      "name": "Prof. Smith",
-      "max_periods_per_day": 4,
-      "availability": []
-    },
-    {
-      "name": "Prof. Jones",
-      "max_periods_per_day": 4,
-      "availability": []
-    },
-    {
-      "name": "Mme. Dupont",
-      "max_periods_per_day": 4,
-      "availability": []
-    }
+    {"name": "DR. A. MAHESH BABU", "max_periods_per_day": 5, "availability": []},
+    {"name": "DR. NAGESH", "max_periods_per_day": 3, "availability": []},
+    {"name": "DR. JITENDRA SHARMA", "max_periods_per_day": 3, "availability": []},
+    {"name": "DR. Y. SUDARSHAN", "max_periods_per_day": 4, "availability": []},
+    {"name": "DR. T. PRIYANKA", "max_periods_per_day": 5, "availability": []},
+    {"name": "MS. SANDHYA", "max_periods_per_day": 4, "availability": []},
+    {"name": "MR. SANDEEP CH", "max_periods_per_day": 4, "availability": []},
+    {"name": "COACH / SELF", "max_periods_per_day": 6, "availability": []}
   ],
   "rooms": [
-    {"name": "Room-101", "capacity": 60, "type": "Lecture Hall"},
-    {"name": "Room-102", "capacity": 40, "type": "Lecture Hall"},
-    {"name": "Room-103", "capacity": 80, "type": "Lecture Hall"},
-    {"name": "Room-104", "capacity": 50, "type": "Lecture Hall"},
-    {"name": "Auditorium", "capacity": 200, "type": "Lecture Hall"},
-    {"name": "CS-LabA", "capacity": 45, "type": "Lab"},
-    {"name": "EE-LabA", "capacity": 45, "type": "Lab"},
-    {"name": "Sports Field", "capacity": 200, "type": "Outdoor"},
-    {"name": "Library", "capacity": 200, "type": "Study Area"}
+    {"name": "H1-07 (Sec 1)", "capacity": 60, "type": "Lecture Hall"},
+    {"name": "H1-08 (Sec 2)", "capacity": 60, "type": "Lecture Hall"},
+    {"name": "H1-09 (Sec 3)", "capacity": 60, "type": "Lecture Hall"},
+    {"name": "Computer Lab 1", "capacity": 60, "type": "Lab"},
+    {"name": "Computer Lab 2", "capacity": 60, "type": "Lab"},
+    {"name": "Sports Field", "capacity": 200, "type": "Outdoor"}
   ],
   "groups": [
-    {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
-    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
-    {"name": "CS-CohortC", "capacity": 40, "courses": ["CS101", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
-    {"name": "EE-CohortA", "capacity": 30, "courses": ["MATH101", "MATH201", "EE101", "EE102", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
+    {"name": "Section 1 (CS)", "capacity": 50, "courses": ["DSA-II", "MFDSA", "CFAI", "FEDF/UI", "JL (Japanese)", "GLBPC", "SPORTS / LIB"]},
+    {"name": "Section 2 (CS)", "capacity": 50, "courses": ["DSA-II", "MFDSA", "CFAI", "FEDF/UI", "JL (Japanese)", "GLBPC", "SPORTS / LIB"]},
+    {"name": "Section 3 (EE)", "capacity": 50, "courses": ["DSA-II", "MCS", "CFAI", "FEDF/UI", "JL (Japanese)", "GLBPC", "SPORTS / LIB"]}
   ],
   "config": {
-    "periods_per_day": 6,
-    "days_per_week": 5
+    "periods_per_day": 8,
+    "days_per_week": 6
   }
 };
 
