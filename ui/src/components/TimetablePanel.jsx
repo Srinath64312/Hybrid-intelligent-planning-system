@@ -56,8 +56,8 @@ export default function TimetablePanel() {
   const [groups, setGroups] = useState(SAMPLE_TIMETABLE_DATA.groups);
 
   // Config States
-  const [periodsPerDay, setPeriodsPerDay] = useState(6);
-  const [daysPerWeek, setDaysPerWeek] = useState(5);
+  const [periodsPerDay, setPeriodsPerDay] = useState(SAMPLE_TIMETABLE_DATA.config.periods_per_day);
+  const [daysPerWeek, setDaysPerWeek] = useState(SAMPLE_TIMETABLE_DATA.config.days_per_week);
   const [solver, setSolver] = useState("Backtracking (MRV+FC)");
 
   // Solver Results
