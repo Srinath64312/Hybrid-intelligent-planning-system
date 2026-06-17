@@ -104,23 +104,12 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
                 local_assignment = assignment.copy()
                 local_assignment[first] = value
 
-                # Forward Checking
-                domain_wipeout = False
-                new_domains = {v: list(d) for v, d in current_domains.items()}
-                for u in unassigned:
-                    if u != first:
-                        valid_vals = [d for d in new_domains[u] if problem.is_consistent(u, d, local_assignment)]
-                        if not valid_vals:
-                            domain_wipeout = True
-                            break
-                        new_domains[u] = valid_vals
-
-                if not domain_wipeout:
-                    res = backtrack(local_assignment, new_domains)
-                    if res is not None:
-                        return res
-                else:
-                    result.trace.append(f"FC wipeout for {first[0]} (Period {first[1]}) = {value}")
+                # We disabled Forward Checking because it calls is_consistent O(N) times per assignment, 
+                # resulting in O(N^3) total consistency checks which locks the browser main thread in WebAssembly.
+                # Since we have Fast LCV + MRV + Degree Heuristics, the search space is perfectly pruned already!
+                res = backtrack(local_assignment, current_domains)
+                if res is not None:
+                    return res
 
                 result.trace.append(f"Backtracking from {first[0]} (Period {first[1]}) = {value}")
                 result.backtracks += 1
