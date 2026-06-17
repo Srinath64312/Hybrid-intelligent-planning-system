@@ -73,16 +73,27 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
         mrv_vars = sorted(mrv_vars, key=get_degree, reverse=True)
         first = mrv_vars[0]
 
-        # Since domain is already randomized in __init__, we can just use it directly.
-        # Computing LCV in Python takes O(V * D^2) which causes massive freezing.
-        sorted_values = current_domains[first]
+        # Fast LCV Approximation (Load Balancing Heuristic)
+        # Instead of an O(V * D^2) deep conflict check, we simply sort the available periods
+        # by how many classes are currently scheduled at that specific (day, period).
+        # This naturally spreads classes out evenly across the week, completely avoiding 
+        # room bottlenecks and teacher exhaustion early in the tree, which prevents backtracks.
+        period_usage = {}
+        for assigned_val in assignment.values():
+            dp = (assigned_val[0], assigned_val[1])
+            period_usage[dp] = period_usage.get(dp, 0) + 1
+            
+        def fast_lcv(val):
+            return period_usage.get((val[0], val[1]), 0)
+            
+        sorted_values = sorted(current_domains[first], key=fast_lcv)
 
         for value in sorted_values:
             result.assignments_tried += 1
             
             # Prevent browser freezing by aborting if we've explored too many dead ends
             # (which usually means the requested schedule is mathematically impossible)
-            if result.assignments_tried > 10000:
+            if result.assignments_tried > 5000:
                 return None
 
             # Use fast consistency check instead of expensive explainability evaluation for every node
