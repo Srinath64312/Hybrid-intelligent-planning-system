@@ -66,8 +66,8 @@ const SAMPLE_TIMETABLE_DATA = {
     {"name": "Room-103", "capacity": 80, "type": "Lecture Hall"},
     {"name": "Room-104", "capacity": 50, "type": "Lecture Hall"},
     {"name": "Auditorium", "capacity": 200, "type": "Lecture Hall"},
-    {"name": "CS-LabA", "capacity": 30, "type": "Lab"},
-    {"name": "EE-LabA", "capacity": 30, "type": "Lab"},
+    {"name": "CS-LabA", "capacity": 45, "type": "Lab"},
+    {"name": "EE-LabA", "capacity": 45, "type": "Lab"},
     {"name": "Sports Field", "capacity": 200, "type": "Outdoor"},
     {"name": "Library", "capacity": 200, "type": "Study Area"}
   ],
