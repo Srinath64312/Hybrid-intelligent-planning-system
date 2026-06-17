@@ -118,6 +118,10 @@ export default function TimetablePanel() {
   const [newGroupCapacity, setNewGroupCapacity] = useState(30);
   const [newGroupCourses, setNewGroupCourses] = useState("");
 
+  const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomCapacity, setNewRoomCapacity] = useState(60);
+  const [newRoomType, setNewRoomType] = useState("Lecture Hall");
+
   const handleAddCourse = () => {
     if (!newCourseName.trim() || !newCourseTeacher.trim()) return;
     const gList = newCourseGroups.split(',').map(g => g.trim()).filter(g => g);
@@ -151,6 +155,41 @@ export default function TimetablePanel() {
     try {
       const parsed = JSON.parse(jsonInput);
       parsed.teachers = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
+
+  const handleDeleteTeacher = (index) => {
+    const updated = [...teachers];
+    updated.splice(index, 1);
+    setTeachers(updated);
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.teachers = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
+
+  const handleAddRoom = () => {
+    if (!newRoomName.trim()) return;
+    const newRoom = { name: newRoomName.trim(), capacity: newRoomCapacity, type: newRoomType };
+    const updated = [...rooms, newRoom];
+    setRooms(updated);
+    setNewRoomName("");
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.rooms = updated;
+      setJsonInput(JSON.stringify(parsed, null, 2));
+    } catch(e) {}
+  };
+
+  const handleDeleteRoom = (index) => {
+    const updated = [...rooms];
+    updated.splice(index, 1);
+    setRooms(updated);
+    try {
+      const parsed = JSON.parse(jsonInput);
+      parsed.rooms = updated;
       setJsonInput(JSON.stringify(parsed, null, 2));
     } catch(e) {}
   };
@@ -470,12 +509,25 @@ export default function TimetablePanel() {
                   </div>
                 </div>
               )}
-              {activeInputTab === "rooms" && rooms.map((r, i) => (
-                <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0">
-                  <span className="text-slate-300 font-bold">{r.name} ({r.type})</span>
-                  <span className="text-slate-500">Cap: {r.capacity}</span>
+              {activeInputTab === "rooms" && (
+                <div className="flex flex-col gap-1">
+                  {rooms.map((r, i) => (
+                    <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0 items-center group">
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 font-bold">{r.name} <span className="text-slate-500 font-normal text-[10px]">({r.type})</span></span>
+                        <span className="text-slate-500 text-[10px]">Capacity: {r.capacity}</span>
+                      </div>
+                      <button onClick={() => handleDeleteRoom(i)} className="text-red-400/50 hover:text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100">x</button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
+                    <input type="text" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} placeholder="Room Name" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                    <input type="number" min="1" value={newRoomCapacity} onChange={e => setNewRoomCapacity(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Capacity" />
+                    <input type="text" value={newRoomType} onChange={e => setNewRoomType(e.target.value)} placeholder="Type (e.g. Lab)" className="w-24 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
+                    <button onClick={handleAddRoom} className="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 px-2 py-1 rounded font-bold transition-colors">Add</button>
+                  </div>
                 </div>
-              ))}
+              )}
               {activeInputTab === "groups" && (
                 <div className="flex flex-col gap-1">
                   {groups.map((g, i) => (
