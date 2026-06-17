@@ -13,7 +13,10 @@ const SAMPLE_TIMETABLE_DATA = {
     {"name": "CS201", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortB"]},
     {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB"]},
     {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]}
+    {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
+    {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
+    {"name": "CFAI", "teacher": "Prof. Jones", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
+    {"name": "Foreign Language", "teacher": "Mme. Dupont", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]}
   ],
   "teachers": [
     {
@@ -40,6 +43,21 @@ const SAMPLE_TIMETABLE_DATA = {
       "name": "Self-Study",
       "max_periods_per_day": 6,
       "availability": []
+    },
+    {
+      "name": "Prof. Smith",
+      "max_periods_per_day": 4,
+      "availability": []
+    },
+    {
+      "name": "Prof. Jones",
+      "max_periods_per_day": 4,
+      "availability": []
+    },
+    {
+      "name": "Mme. Dupont",
+      "max_periods_per_day": 4,
+      "availability": []
     }
   ],
   "rooms": [
@@ -50,8 +68,8 @@ const SAMPLE_TIMETABLE_DATA = {
     {"name": "Library", "capacity": 100, "type": "Study Area"}
   ],
   "groups": [
-    {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study"]},
-    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study"]}
+    {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
+    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
   ],
   "config": {
     "periods_per_day": 6,
