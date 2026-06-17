@@ -6,17 +6,17 @@ import { pythonRunner } from '../pythonRunner'
 // Sample data matching timetable_sample.json
 const SAMPLE_TIMETABLE_DATA = {
   "courses": [
-    {"name": "CS101", "teacher": "Dr. Alice", "periods_required": 3, "groups": ["CS-CohortA"]},
+    {"name": "CS101", "teacher": "Dr. Alice", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortC"]},
     {"name": "CS102", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortA"]},
-    {"name": "MATH101", "teacher": "Prof. Carol", "periods_required": 4, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "CS-Lab101", "teacher": "Dr. Alice", "periods_required": 2, "groups": ["CS-CohortA"], "is_lab": true},
+    {"name": "MATH101", "teacher": "Prof. Carol", "periods_required": 4, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
+    {"name": "CS-Lab101", "teacher": "Dr. Alice", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortC"], "is_lab": true},
     {"name": "CS201", "teacher": "Dr. Bob", "periods_required": 3, "groups": ["CS-CohortB"]},
-    {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB"]},
-    {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "CFAI", "teacher": "Prof. Jones", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]},
-    {"name": "Foreign Language", "teacher": "Mme. Dupont", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB"]}
+    {"name": "MATH201", "teacher": "Prof. Carol", "periods_required": 3, "groups": ["CS-CohortB", "EE-CohortA"]},
+    {"name": "Sports", "teacher": "Coach Dave", "periods_required": 2, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
+    {"name": "Library / Study", "teacher": "Self-Study", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
+    {"name": "FED", "teacher": "Prof. Smith", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
+    {"name": "CFAI", "teacher": "Prof. Jones", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]},
+    {"name": "Foreign Language", "teacher": "Mme. Dupont", "periods_required": 3, "groups": ["CS-CohortA", "CS-CohortB", "CS-CohortC", "EE-CohortA"]}
   ],
   "teachers": [
     {
@@ -63,13 +63,19 @@ const SAMPLE_TIMETABLE_DATA = {
   "rooms": [
     {"name": "Room-101", "capacity": 60, "type": "Lecture Hall"},
     {"name": "Room-102", "capacity": 40, "type": "Lecture Hall"},
+    {"name": "Room-103", "capacity": 80, "type": "Lecture Hall"},
+    {"name": "Room-104", "capacity": 50, "type": "Lecture Hall"},
+    {"name": "Auditorium", "capacity": 200, "type": "Lecture Hall"},
     {"name": "CS-LabA", "capacity": 30, "type": "Lab"},
-    {"name": "Sports Field", "capacity": 100, "type": "Outdoor"},
-    {"name": "Library", "capacity": 100, "type": "Study Area"}
+    {"name": "EE-LabA", "capacity": 30, "type": "Lab"},
+    {"name": "Sports Field", "capacity": 200, "type": "Outdoor"},
+    {"name": "Library", "capacity": 200, "type": "Study Area"}
   ],
   "groups": [
     {"name": "CS-CohortA", "capacity": 25, "courses": ["CS101", "CS102", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
-    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
+    {"name": "CS-CohortB", "capacity": 35, "courses": ["MATH101", "CS201", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
+    {"name": "CS-CohortC", "capacity": 40, "courses": ["CS101", "MATH101", "CS-Lab101", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]},
+    {"name": "EE-CohortA", "capacity": 30, "courses": ["MATH101", "MATH201", "Sports", "Library / Study", "FED", "CFAI", "Foreign Language"]}
   ],
   "config": {
     "periods_per_day": 6,
