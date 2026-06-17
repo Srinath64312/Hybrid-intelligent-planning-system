@@ -79,6 +79,12 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
 
         for value in sorted_values:
             result.assignments_tried += 1
+            
+            # Prevent browser freezing by aborting if we've explored too many dead ends
+            # (which usually means the requested schedule is mathematically impossible)
+            if result.assignments_tried > 10000:
+                return None
+
             # Use fast consistency check instead of expensive explainability evaluation for every node
             is_valid = problem.is_consistent(first, value, assignment)
 
