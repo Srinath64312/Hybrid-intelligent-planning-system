@@ -75,9 +75,10 @@ export default function TimetablePanel() {
   // New Item States
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseTeacher, setNewCourseTeacher] = useState("");
-  const [newCoursePeriods, setNewCoursePeriods] = useState(3);
+  const [newCoursePeriods, setNewCoursePeriods] = useState(1);
   const [newCourseGroups, setNewCourseGroups] = useState("");
   const [newCourseIsLab, setNewCourseIsLab] = useState(false);
+  const [newCoursePriority, setNewCoursePriority] = useState(1);
 
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherPeriods, setNewTeacherPeriods] = useState(4);
@@ -91,14 +92,15 @@ export default function TimetablePanel() {
 
   const handleAddCourse = () => {
     if (!newCourseName.trim() || !newCourseTeacher.trim()) return;
-    const gList = newCourseGroups.split(',').map(g => g.trim()).filter(g => g);
+    const groupsArray = newCourseGroups.split(',').map(s => s.trim()).filter(Boolean);
     const newCourse = { 
       name: newCourseName.trim(), 
       teacher: newCourseTeacher.trim(), 
       periods_required: newCoursePeriods, 
-      groups: gList 
+      groups: groupsArray,
+      is_lab: newCourseIsLab,
+      priority: newCoursePriority
     };
-    if (newCourseIsLab) newCourse.is_lab = true;
     
     const updated = [...courses, newCourse];
     setCourses(updated);
@@ -437,7 +439,7 @@ export default function TimetablePanel() {
                     <div key={i} className="flex justify-between border-b border-white/5 py-1.5 last:border-0 items-center group">
                       <div className="flex flex-col">
                         <span className="text-slate-300 font-bold">{c.name} {c.is_lab && <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 py-0.2 rounded font-normal">Lab</span>}</span>
-                        <span className="text-slate-500 text-[10px]">{c.teacher} · {c.periods_required} periods</span>
+                        <span className="text-slate-500 text-[10px]">{c.teacher} · {c.periods_required} periods · Pri {c.priority || 1}</span>
                       </div>
                       <button onClick={() => handleDeleteCourse(i)} className="text-red-400/50 hover:text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100">x</button>
                     </div>
@@ -449,6 +451,7 @@ export default function TimetablePanel() {
                     </div>
                     <div className="flex items-center gap-2">
                       <input type="number" min="1" value={newCoursePeriods} onChange={e => setNewCoursePeriods(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Periods Required" />
+                      <input type="number" min="1" value={newCoursePriority} onChange={e => setNewCoursePriority(parseInt(e.target.value))} className="w-16 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" title="Priority (higher=better)" />
                       <input type="text" value={newCourseGroups} onChange={e => setNewCourseGroups(e.target.value)} placeholder="Cohorts (e.g., CS-CohortA)" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white outline-none text-[10px]" />
                       <label className="flex items-center gap-1 text-slate-400 text-[10px] cursor-pointer">
                         <input type="checkbox" checked={newCourseIsLab} onChange={e => setNewCourseIsLab(e.target.checked)} className="accent-indigo-500" /> Lab

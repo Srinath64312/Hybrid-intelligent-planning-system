@@ -33,15 +33,22 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
     domains = {v: list(d) for v, d in problem.domains.items()}
     best_assignment = {}
     
+    def score(assign):
+        return sum(problem.course_map[var[0]].get("priority", 1) for var in assign)
+        
+    best_score = 0
+
     def backtrack(assignment: Dict[Tuple[str, int], Tuple[int, int, str]], current_domains: Dict[Tuple[str, int], List[Tuple[int, int, str]]]) -> Optional[Dict[Tuple[str, int], Tuple[int, int, str]]]:
-        nonlocal best_assignment
+        nonlocal best_assignment, best_score
         
         # Record trace / visited sequence for visualization
         result.visited_sequence.append({
             "assignment": {f"{var[0]}_{var[1]}": val for var, val in assignment.items()}
         })
 
-        if len(assignment) > len(best_assignment):
+        current_score = score(assignment)
+        if current_score > best_score:
+            best_score = current_score
             best_assignment = assignment.copy()
 
         if len(assignment) == len(problem.variables):
@@ -53,10 +60,11 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
         min_len = min(len(current_domains[v]) for v in unassigned)
         mrv_vars = [v for v in unassigned if len(current_domains[v]) == min_len]
         
-        # Tie breaker: degree heuristic (variables with most constraints on remaining variables)
-        # We can sort by count of variables that share student groups or teacher
-        def get_degree(var):
+        # Tie breaker: Priority then Degree
+        def get_tiebreaker(var):
             c_name, _ = var
+            priority = problem.course_map[c_name].get("priority", 1)
+            
             groups = problem.course_groups.get(c_name, [])
             teacher = problem.course_map[c_name].get("teacher")
             degree = 0
@@ -68,9 +76,11 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
                 u_teacher = problem.course_map[u_cname].get("teacher")
                 if teacher == u_teacher or any(g in u_groups for g in groups):
                     degree += 1
-            return degree
+                    
+            # Return tuple so it sorts by priority first, then degree
+            return (priority, degree)
 
-        mrv_vars = sorted(mrv_vars, key=get_degree, reverse=True)
+        mrv_vars = sorted(mrv_vars, key=get_tiebreaker, reverse=True)
         first = mrv_vars[0]
 
         # Fast LCV Approximation (Load Balancing Heuristic)
@@ -93,7 +103,7 @@ def run_timetable_backtracking(problem: TimetableProblem) -> TimetableResult:
             
             # Prevent browser freezing by aborting if we've explored too many dead ends
             # (which usually means the requested schedule is mathematically impossible)
-            if result.assignments_tried > 5000:
+            if result.assignments_tried > 50000:
                 return None
 
             # Use fast consistency check instead of expensive explainability evaluation for every node
